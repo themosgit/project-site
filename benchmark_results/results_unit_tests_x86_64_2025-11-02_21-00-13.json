@@ -1,0 +1,21 @@
+{
+  "executable": "unit_tests",
+  "timestamp": "2025-11-02 21:00:13",
+  "architecture": "x86_64",
+  "iterations_measured": 0,
+  "raw_data": {
+    "total_times": [],
+    "queries": {}
+  },
+  "statistics": {
+    "total_runtime": {
+      "median": 0,
+      "average": 0,
+      "min": 0,
+      "max": 0,
+      "std_dev": 0,
+      "runs": []
+    },
+    "per_query": {}
+  }
+}
