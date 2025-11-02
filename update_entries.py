@@ -13,7 +13,7 @@ def update_benchmark_files_list():
         if not filenames:
              replacement_content = "const BENCHMARK_FILES = [];"
         else:
-            replacement_content = f"""const BENCHMARK_FILES = [ {js_items} ];"""
+            replacement_content = f"""const BENCHMARK_FILES = [\n{js_items} ];"""
         pattern = re.compile(
             r'(const BENCHMARK_FILES\s*=\s*)(\[.*?\];)',
             re.DOTALL
