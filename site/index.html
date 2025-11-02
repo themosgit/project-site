@@ -4,25 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benchmark Performance Analysis</title>
+    <title>Benchmark Performance Analysis - Part 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
-    <div id="app" class="p-6 max-w-7xl mx-auto"></div>
-
+    
+    <div id="app" class="p-6 w-full"></div>
+    <h1 class="text-3xl font-bold p-6">Benchmark Performance Analysis - Part 1</h1>
     <script>
-        const RESULTS_PATH = '/benchmark_results/'; // Modify this path as needed
+        const RESULTS_PATH = 'benchmark_results/';
 
         const state = {
             allResults: [],
             selectedExecutables: {},
-            selectedArchitecture: 'x86_64',
+            selectedArchitecture: 'arm64',
             comparisonMode: 'fastest', // 'fastest' or 'slowest'
             sortBy: 'absolute',
-            showTop: 20,
+            showTop: 10,
             currentPage: 0,
             error: '',
+            activeTableTab: null,
+            visibleExecutables: [],
         };
 
         let totalRuntimeChart = null;
@@ -81,17 +84,15 @@
                 byExecAndArch[key].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             });
 
-            const executables = [...new Set(state.allResults.map(r => r.executable))];
-            
             state.selectedExecutables = {};
-            executables.forEach(exec => {
-                const archResults = byExecAndArch[`${exec}_${state.selectedArchitecture}`];
-                if (archResults && archResults.length > 0) {
-                    state.selectedExecutables[exec] = archResults[0];
-                }
-            });
+            const defaultExecutable = 'fast';
+            const archResults = byExecAndArch[`${defaultExecutable}_${state.selectedArchitecture}`];
+            if (archResults && archResults.length > 0) {
+                state.selectedExecutables[defaultExecutable] = archResults[0];
+            }
 
             state.byExecAndArch = byExecAndArch;
+            state.visibleExecutables = [defaultExecutable];
         }
 
         function getAvailableArchitectures() {
@@ -194,14 +195,14 @@
             let referenceExecutable = null;
 
             selectedExecs.forEach(execResult => {
-                const total = execResult.statistics.total_runtime.average;
+                const total = execResult.statistics.total_runtime.average / 1000; // Convert to seconds
                 if (referenceTotal === null) {
                     referenceTotal = total;
                     referenceExecutable = execResult.executable;
                 } else if (state.comparisonMode === 'fastest' && total < referenceTotal) {
                     referenceTotal = total;
                     referenceExecutable = execResult.executable;
-                } else if (state.comparisonMode === 'slowest' && total > referenceTotal) {
+                } else if (state.comparisonMode === 'slowest' && total > referenceTotal) { // No change needed here, but for context
                     referenceTotal = total;
                     referenceExecutable = execResult.executable;
                 }
@@ -212,7 +213,7 @@
             const comparisons = {};
             selectedExecs.forEach(execResult => {
                 const exec = execResult.executable;
-                const total = execResult.statistics.total_runtime.average;
+                const total = execResult.statistics.total_runtime.average / 1000; // Convert to seconds
                 const diff = total - referenceTotal;
                 const percentDiff = referenceTotal === 0 ? 0 : ((diff / referenceTotal) * 100);
 
@@ -247,7 +248,7 @@
                     <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis</h1>
                     ${state.error ? `
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">${state.error}</div>
-                    ` : `
+                    `: `
                         <p class="text-gray-600 mb-6">Loading benchmark results from <code>${RESULTS_PATH}</code>...</p>
                     `}
                 </div>
@@ -276,182 +277,220 @@
             const endIndex = startIndex + state.showTop;
             const paginatedQueries = sortedAnalysis.slice(startIndex, endIndex);
             const totalRuntimeComparison = getTotalRuntimeComparison();
-            const executables = getAvailableExecutables();
+            const allExecutables = getAvailableExecutables();
             const architectures = getAvailableArchitectures();
             const selectedExecNames = Object.keys(state.selectedExecutables);
 
+            if (!state.activeTableTab && selectedExecNames.length > 0) {
+                state.activeTableTab = selectedExecNames[0];
+            } else if (selectedExecNames.length === 0) {
+                state.activeTableTab = null;
+            }
             return `
                 <div class="mb-6">
                     <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis</h1>
                     <p class="text-gray-600">Comparing executable performance</p>
                 </div>
 
-                <!-- Architecture Selection -->
-                <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-lg font-semibold mb-3">Architecture</h2>
-                    <div class="flex gap-2">
-                        ${architectures.map(arch => `
-                            <button data-arch="${arch}" class="arch-btn px-4 py-2 rounded ${state.selectedArchitecture === arch ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
-                                ${arch}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <!-- Comparison Mode Selection -->
-                <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-lg font-semibold mb-3">Comparison Mode</h2>
-                    <div class="flex gap-4">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="comparisonMode" value="fastest" class="form-radio text-blue-600" ${state.comparisonMode === 'fastest' ? 'checked' : ''}>
-                            <span class="ml-2">Show relative to <span class="font-bold">Fastest</span></span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="comparisonMode" value="slowest" class="form-radio text-blue-600" ${state.comparisonMode === 'slowest' ? 'checked' : ''}>
-                            <span class="ml-2">Show relative to <span class="font-bold">Slowest</span></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Executable Selection -->
-                <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-lg font-semibold mb-3">Executables & Versions</h2>
-                    <div class="space-y-3">
-                        ${executables.map(exec => {
-                            const results = getResultsForExecutable(exec, state.selectedArchitecture);
-                            const selected = state.selectedExecutables[exec];
-                            return `
-                                <div class="border rounded p-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="font-semibold">${exec}</span>
-                                        ${selected ? `<span class="text-xs text-gray-500">${selected.timestamp}</span>` : ''}
-                                    </div>
-                                    <select data-exec="${exec}" class="exec-version-select border rounded px-2 py-1 text-sm max-w-xs">
-                                        ${results.length === 0 ? '<option>No results for this architecture</option>' : ''}
-                                        ${results.map(r => `
-                                            <option value="${r.filename}" ${selected?.filename === r.filename ? 'selected' : ''}>
-                                                ${r.timestamp} (${r.statistics.total_runtime.median.toFixed(0)}ms median)
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-
-                <!-- Total Runtime Comparison -->
-                ${totalRuntimeComparison ? `
-                <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-xl font-semibold mb-3">Total Runtime Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            ${Object.entries(totalRuntimeComparison.comparisons).sort(([, a], [, b]) => {
-                                if (state.comparisonMode === 'fastest') {
-                                    return a.value - b.value;
-                                } else {
-                                    return b.value - a.value;
-                                }
-                            }).map(([branch, data]) => `
-                                <div class="flex items-center justify-between p-2 rounded ${data.isReference ? 'bg-green-100 border border-green-300' : (data.diff > 0 ? 'bg-red-50' : 'bg-green-50')}">
-                                    <span class="font-semibold ${data.isReference ? 'text-green-800' : ''}">${branch} ${data.isReference ? `(${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})` : ''}:</span>
-                                    <div class="text-right">
-                                        <span class="mr-4">${data.value.toFixed(2)}ms</span>
-                                        ${!data.isReference ? `
-                                            <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
-                                                ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(2)}ms
-                                                (${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(2)}%)
-                                            </span>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div>
-                            <canvas id="totalRuntimeChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Controls -->
-                <div class="flex justify-between items-end gap-4 mb-6">
-                    <div class="flex gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Sort By:</label>
-                            <select id="sort-by-select" class="border rounded px-3 py-2">
-                                <option value="absolute" ${state.sortBy === 'absolute' ? 'selected' : ''}>Absolute Difference (ms)</option>
-                                <option value="percent" ${state.sortBy === 'percent' ? 'selected' : ''}>Percent Difference (%)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Show Per Page:</label>
-                            <select id="show-top-select" class="border rounded px-3 py-2">
-                                <option value="10" ${state.showTop == 10 ? 'selected' : ''}>10</option>
-                                <option value="20" ${state.showTop == 20 ? 'selected' : ''}>20</option>
-                                <option value="30" ${state.showTop == 30 ? 'selected' : ''}>30</option>
-                                <option value="50" ${state.showTop == 50 ? 'selected' : ''}>50</option>
-                                <option value="${sortedAnalysis.length}" ${state.showTop == sortedAnalysis.length ? 'selected' : ''}>All (${sortedAnalysis.length})</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="prev-page-btn" class="px-3 py-1.5 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${state.currentPage === 0 ? 'disabled' : ''}>
-                            Previous
-                        </button>
-                        <span class="text-sm text-gray-600">Page ${state.currentPage + 1} of ${totalPages}</span>
-                        <button id="next-page-btn" class="px-3 py-1.5 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${state.currentPage >= totalPages - 1 ? 'disabled' : ''}>
-                            Next
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Chart -->
-                <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-xl font-semibold mb-4">Query Performance Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
-                    <div class="relative h-[400px]">
-                        <canvas id="queryPerformanceChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Detailed Table -->
-                <div class="bg-white border rounded-lg overflow-hidden">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold">Query</th>
-                                ${selectedExecNames.map(exec => `
-                                    <th class="px-4 py-3 text-right text-sm font-semibold">${exec} (ms)</th>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Controls -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Architecture Selection -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-lg font-semibold mb-3">Architecture</h2>
+                            <div class="flex gap-2">
+                                ${architectures.map(arch => `
+                                    <button data-arch="${arch}" class="arch-btn px-4 py-2 rounded ${state.selectedArchitecture === arch ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                                        ${arch}
+                                    </button>
                                 `).join('')}
-                                <th class="px-4 py-3 text-right text-sm font-semibold">Reference</th>
-                                <th class="px-4 py-3 text-right text-sm font-semibold">Δ Avg</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            ${paginatedQueries.map((item, idx) => `
-                                <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                                    <td class="px-4 py-3 font-mono font-semibold">${item.query}</td>
-                                    ${selectedExecNames.map(exec => {
-                                        const data = item.comparisons[exec];
-                                        return `<td class="px-4 py-3 text-right ${data?.isReference ? 'font-bold text-green-700' : ''}">${data?.value !== null ? data.value.toFixed(1) : '-'}</td>`;
-                                    }).join('')}
-                                    <td class="px-4 py-3 text-right font-semibold">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
-                                    <td class="px-4 py-3 text-right font-semibold">
-                                        ${selectedExecNames.filter(e => e !== item.referenceExecutable).map(exec => {
+                            </div>
+                        </div>
+
+                        <!-- Algorithm Filter -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-lg font-semibold mb-3">Filter Algorithms</h2>
+                            <div class="flex flex-wrap gap-2">
+                                ${allExecutables.map(exec => `
+                                    <button data-exec="${exec}" class="executable-filter-btn px-3 py-1.5 rounded text-sm ${state.visibleExecutables.includes(exec) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                                        ${exec}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+
+                        <!-- Comparison Mode Selection -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-lg font-semibold mb-3">Comparison Mode</h2>
+                            <div class="flex gap-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="comparisonMode" value="fastest" class="form-radio text-blue-600" ${state.comparisonMode === 'fastest' ? 'checked' : ''}>
+                                    <span class="ml-2">Show relative to <span class="font-bold">Fastest</span></span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="comparisonMode" value="slowest" class="form-radio text-blue-600" ${state.comparisonMode === 'slowest' ? 'checked' : ''}>
+                                    <span class="ml-2">Show relative to <span class="font-bold">Slowest</span></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Executable Selection -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-lg font-semibold mb-3">Executables & Versions</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3">
+                                ${state.visibleExecutables.map(exec => {
+                                    const results = getResultsForExecutable(exec, state.selectedArchitecture);
+                                    const selected = state.selectedExecutables[exec];
+                                    return `
+                                        <div class="border rounded p-3">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="font-semibold">${exec}</span>
+                                                ${selected ? `<span class="text-xs text-gray-500">${selected.timestamp}</span>` : ''}
+                                            </div>
+                                            <select data-exec="${exec}" class="exec-version-select border rounded px-2 py-1 text-sm w-full">
+                                                ${results.length === 0 ? '<option>No results for this architecture</option>' : ''}
+                                                ${results.map(r => `
+                                                    <option value="${r.filename}" ${selected?.filename === r.filename ? 'selected' : ''}>
+                                                        ${r.timestamp} (${r.statistics.total_runtime.median.toFixed(0)}ms, ${r.iterations_measured} iterations)
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Results -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Total Runtime Comparison -->
+                        ${totalRuntimeComparison ? `
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-xl font-semibold mb-3">Total Runtime Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    ${Object.entries(totalRuntimeComparison.comparisons).sort(([, a], [, b]) => {
+                                        if (state.comparisonMode === 'fastest') {
+                                            return a.value - b.value;
+                                        } else {
+                                            return b.value - a.value;
+                                        }
+                                    }).map(([branch, data]) => `
+                                        <div class="flex items-center justify-between p-2 rounded ${data.isReference ? 'bg-green-100 border border-green-300' : (data.diff > 0 ? 'bg-red-50' : 'bg-green-50')}">
+                                            <span class="font-semibold ${data.isReference ? 'text-green-800' : ''}">${branch} ${data.isReference ? `(${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})` : ''}:</span>
+                                            <div class="text-right">
+                                                <span class="mr-4">${data.value.toFixed(3)}s</span>
+                                                ${!data.isReference ? `
+                                                    <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                        ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(3)}s
+                                                        (${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(2)}%)
+                                                    </span>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div>
+                                    <canvas id="totalRuntimeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Chart -->
+                        <div class="bg-white border rounded-lg p-4">
+                            <h2 class="text-xl font-semibold mb-4">Query Performance Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
+                            <div class="relative h-[400px]">
+                                <canvas id="queryPerformanceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Controls and Detailed Table -->
+                <div class="mt-6">
+                    <!-- Controls -->
+                    <div class="flex flex-wrap justify-between items-end gap-4 mb-4">
+                        <div class="flex gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Sort By:</label>
+                                <select id="sort-by-select" class="border rounded px-3 py-2">
+                                    <option value="absolute" ${state.sortBy === 'absolute' ? 'selected' : ''}>Absolute Difference (ms)</option>
+                                    <option value="percent" ${state.sortBy === 'percent' ? 'selected' : ''}>Percent Difference (%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Show Per Page:</label>
+                                <select id="show-top-select" class="border rounded px-3 py-2">
+                                    <option value="10" ${state.showTop == 10 ? 'selected' : ''}>10</option>
+                                    <option value="20" ${state.showTop == 20 ? 'selected' : ''}>20</option>
+                                    <option value="30" ${state.showTop == 30 ? 'selected' : ''}>30</option>
+                                    <option value="50" ${state.showTop == 50 ? 'selected' : ''}>50</option>
+                                    <option value="${sortedAnalysis.length}" ${state.showTop == sortedAnalysis.length ? 'selected' : ''}>All (${sortedAnalysis.length})</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                            <button id="prev-page-btn" class="px-3 py-1.5 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${state.currentPage === 0 ? 'disabled' : ''}>
+                                Previous
+                            </button>
+                            <span class="text-sm text-gray-600">Page ${state.currentPage + 1} of ${totalPages}</span>
+                            <button id="next-page-btn" class="px-3 py-1.5 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${state.currentPage >= totalPages - 1 ? 'disabled' : ''}>
+                                Next
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Table -->
+                    <div class="bg-white border rounded-lg overflow-hidden md:block">
+                        <div class="md:hidden border-b">
+                            <div class="flex -mb-px overflow-x-auto">
+                                ${selectedExecNames.map(exec => `
+                                    <button data-tab-target="${exec}" class="table-tab-btn whitespace-nowrap py-3 px-4 font-semibold text-sm ${state.activeTableTab === exec ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}">
+                                        ${exec}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ${selectedExecNames.map(exec => `
+                            <div class="${state.activeTableTab === exec ? 'block' : 'hidden'} md:block">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold">Query</th>
+                                            <th class="px-4 py-3 text-right text-sm font-semibold">${exec} (ms)</th>
+                                            <th class="px-4 py-3 text-right text-sm font-semibold">Reference</th>
+                                            <th class="px-4 py-3 text-right text-sm font-semibold">Δ Avg</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y">
+                                        ${paginatedQueries.map((item, idx) => {
                                             const data = item.comparisons[exec];
-                                            if (!data || data.diff === null) return '-';
+                                            if (!data) return '';
                                             return `
-                                                <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
-                                                    ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
-                                                    <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
-                                                </span>
+                                                <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                                                    <td class="px-4 py-3 font-mono font-semibold">${item.query}</td>
+                                                    <td class="px-4 py-3 text-right ${data.isReference ? 'font-bold text-green-700' : ''}">${data.value !== null ? data.value.toFixed(1) : '-'}</td>
+                                                    <td class="px-4 py-3 text-right font-semibold">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
+                                                    <td class="px-4 py-3 text-right font-semibold">
+                                                        ${!data.isReference && data.diff !== null ? `
+                                                            <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                                ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
+                                                                <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
+                                                            </span>
+                                                        ` : (data.isReference ? 'Reference' : '-')}
+                                                    </td>
+                                                </tr>
                                             `;
-                                        }).join('<br>')}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `).join('')}
+                        ${selectedExecNames.length === 0 ? '<p class="p-4 text-gray-500">Select an executable to see detailed query results.</p>' : ''}
+                    </div>
                 </div>
             `;
         }
@@ -461,6 +500,7 @@
                 radio.addEventListener('change', (e) => {
                     state.comparisonMode = e.target.value;
                     state.currentPage = 0;
+                    state.activeTableTab = null;
                     render();
                 });
             });
@@ -468,7 +508,16 @@
             document.querySelectorAll('.arch-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     state.selectedArchitecture = e.target.dataset.arch;
+                    state.activeTableTab = null;
                     processResults();
+                    render();
+                });
+            });
+
+            document.querySelectorAll('.executable-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const exec = e.target.dataset.exec;
+                    toggleExecutableVisibility(exec);
                     render();
                 });
             });
@@ -478,6 +527,7 @@
                     const exec = e.target.dataset.exec;
                     const filename = e.target.value;
                     changeExecutableVersion(exec, filename);
+                    state.activeTableTab = null;
                 });
             });
 
@@ -507,6 +557,27 @@
                     render();
                 }
             });
+
+            document.querySelectorAll('.table-tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    state.activeTableTab = e.currentTarget.dataset.tabTarget;
+                    render();
+                });
+            });
+        }
+
+        function toggleExecutableVisibility(exec) {
+            const index = state.visibleExecutables.indexOf(exec);
+            if (index > -1) {
+                state.visibleExecutables.splice(index, 1);
+                // Also remove it from the active selection
+                delete state.selectedExecutables[exec];
+            } else {
+                state.visibleExecutables.push(exec);
+                // Re-select the latest version for this newly visible architecture
+                const archResults = getResultsForExecutable(exec, state.selectedArchitecture);
+                if (archResults && archResults.length > 0) state.selectedExecutables[exec] = archResults[0];
+            }
         }
 
         function renderCharts() {
@@ -524,7 +595,7 @@
                     data: {
                         labels: chartData.map(d => d.branch),
                         datasets: [{
-                            label: 'Total Time (ms)',
+                            label: 'Total Time (s)',
                             data: chartData.map(d => d.time),
                             backgroundColor: chartData.map((d, i) => d.isReference ? referenceColor : colors[i % colors.length]),
                             borderRadius: 4,
@@ -537,14 +608,14 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (context) => `${context.raw.toFixed(2)} ms`
+                                    label: (context) => `${context.raw.toFixed(3)} s`
                                 }
                             }
                         },
                         scales: {
                             y: {
                                 beginAtZero: false,
-                                title: { display: true, text: 'Total Time (ms)' }
+                                title: { display: true, text: 'Total Time (s)' }
                             }
                         }
                     }
@@ -597,12 +668,11 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
                         plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: (context) => `${context.dataset.label}: ${context.raw.toFixed(2)} ms`
-                                }
-                            }
                         },
                         scales: {
                             y: {
