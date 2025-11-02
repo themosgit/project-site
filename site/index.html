@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,22 +7,18 @@
     <title>Benchmark Performance Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        canvas {
-            transition: height 0.3s ease-in-out;
-        }
-    </style>
 </head>
 <body class="bg-gray-100">
-
-    <div id="app" class="p-6 max-w-7xl mx-auto">
-    </div>
+    <div id="app" class="p-6 max-w-7xl mx-auto"></div>
 
     <script>
+        const RESULTS_PATH = './benchmark_results/'; // Modify this path as needed
+
         const state = {
-            benchmarkData: null,
-            selectedBranches: [],
-            baseBranch: '',
+            allResults: [],
+            selectedExecutables: {},
+            selectedArchitecture: 'x86_64',
+            comparisonMode: 'fastest', // 'fastest' or 'slowest'
             sortBy: 'absolute',
             showTop: 20,
             currentPage: 0,
@@ -33,143 +30,210 @@
 
         const app = document.getElementById('app');
 
-
-        function processData(json) {
+        async function loadAllResults() {
             try {
-                let data;
-            
-                if (json.executables && json.statistics) {
-                    data = {
-                        branches: json.executables,
-                        statistics: json.statistics
-                    };
-                } else if (json.branches && json.statistics) {
-                    data = json;
-                } else {
-                    throw new Error('Invalid benchmark JSON format. Must contain "branches"/"executables" and "statistics" fields.');
+                const response = await fetch(RESULTS_PATH);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(href => href && href.startsWith('results_') && href.endsWith('.json'));
+
+                if (links.length === 0) {
+                    state.error = `No benchmark result files found in '${RESULTS_PATH}'. Please ensure results_*.json files are in the specified directory.`;
+                    render();
+                    return;
                 }
 
-                state.benchmarkData = data;
-                state.selectedBranches = data.branches.slice(0, 2);
-                state.baseBranch = data.branches[0];
-                state.error = '';
-                render();
-            } catch (err) {
-                state.error = `Error parsing JSON: ${err.message}`;
-                state.benchmarkData = null;
-                render();
-            }
-        }
+                const allData = await Promise.all(
+                    links.map(async (file) => {
+                        const res = await fetch(`${RESULTS_PATH}${file}`);
+                        const data = await res.json();
+                        return { filename: file, ...data };
+                    })
+                );
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const json = JSON.parse(e.target.result);
-                processData(json);
-            };
-            reader.readAsText(file);
-        }
-        
-        async function loadDefaultData() {
-            try {
-                const response = await fetch('results.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const json = await response.json();
-                processData(json);
+                state.allResults = allData;
+                processResults();
+                render();
             } catch (e) {
-                console.info("Could not load default 'results.json'. Waiting for user upload.", e.message);
-                render(); 
+                state.error = `Failed to load results from '${RESULTS_PATH}': ${e.message}`;
+                render();
             }
         }
 
-        function clearData() {
-            state.benchmarkData = null;
-            state.selectedBranches = [];
-            state.baseBranch = '';
-            state.error = '';
-            state.currentPage = 0;
-            render();
+        function processResults() {
+            const byExecAndArch = {};
+
+            state.allResults.forEach(result => {
+                const exec = result.executable;
+                const arch = result.architecture;
+                const key = `${exec}_${arch}`;
+
+                if (!byExecAndArch[key]) {
+                    byExecAndArch[key] = [];
+                }
+                byExecAndArch[key].push(result);
+            });
+
+            Object.keys(byExecAndArch).forEach(key => {
+                byExecAndArch[key].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            });
+
+            const executables = [...new Set(state.allResults.map(r => r.executable))];
+            
+            state.selectedExecutables = {};
+            executables.forEach(exec => {
+                const archResults = byExecAndArch[`${exec}_${state.selectedArchitecture}`];
+                if (archResults && archResults.length > 0) {
+                    state.selectedExecutables[exec] = archResults[0];
+                }
+            });
+
+            state.byExecAndArch = byExecAndArch;
         }
 
-        function toggleBranch(branch) {
-            const index = state.selectedBranches.indexOf(branch);
-            if (index > -1) {
-                state.selectedBranches.splice(index, 1);
-            } else {
-                state.selectedBranches.push(branch);
+        function getAvailableArchitectures() {
+            return [...new Set(state.allResults.map(r => r.architecture))];
+        }
+
+        function getAvailableExecutables() {
+            return [...new Set(state.allResults.map(r => r.executable))];
+        }
+
+        function getResultsForExecutable(exec, arch) {
+            const key = `${exec}_${arch}`;
+            return state.byExecAndArch[key] || [];
+        }
+
+        function changeExecutableVersion(exec, filename) {
+            const result = state.allResults.find(r => r.filename === filename);
+            if (result) {
+                state.selectedExecutables[exec] = result;
+                render();
             }
-            render();
         }
 
         function getAnalysis() {
-            if (!state.benchmarkData || state.selectedBranches.length === 0 || !state.baseBranch) return [];
+            const selectedExecs = Object.values(state.selectedExecutables);
+            if (selectedExecs.length === 0) return [];
 
-            const baseStats = state.benchmarkData.statistics[state.baseBranch]?.per_query_stats;
-            if (!baseStats) return [];
+            const allQueries = new Set();
+            selectedExecs.forEach(exec => {
+                Object.keys(exec.statistics.per_query).forEach(query => allQueries.add(query));
+            });
 
-            const queries = Object.keys(baseStats);
+            const comparisonResults = [];
 
-            return queries.map(query => {
-                const baseAvg = baseStats[query].average;
+            allQueries.forEach(query => {
+                let referenceValue = null;
+                let referenceExecutable = null;
+
+                selectedExecs.forEach(execResult => {
+                    const queryStats = execResult.statistics.per_query[query];
+                    if (queryStats) {
+                        const avg = queryStats.average;
+                        if (referenceValue === null) {
+                            referenceValue = avg;
+                            referenceExecutable = execResult.executable;
+                        } else if (state.comparisonMode === 'fastest' && avg < referenceValue) {
+                            referenceValue = avg;
+                            referenceExecutable = execResult.executable;
+                        } else if (state.comparisonMode === 'slowest' && avg > referenceValue) {
+                            referenceValue = avg;
+                            referenceExecutable = execResult.executable;
+                        }
+                    }
+                });
+
+                if (referenceValue === null) return;
+
                 const comparisons = {};
+                selectedExecs.forEach(execResult => {
+                    const exec = execResult.executable;
+                    const queryStats = execResult.statistics.per_query[query];
+                    
+                    if (queryStats) {
+                        const value = queryStats.average;
+                        const diff = value - referenceValue;
+                        const percentDiff = referenceValue === 0 ? 0 : ((diff / referenceValue) * 100);
 
-                state.selectedBranches.forEach(branch => {
-                    if (branch !== state.baseBranch && state.benchmarkData.statistics[branch]?.per_query_stats[query]) {
-                        const branchAvg = state.benchmarkData.statistics[branch].per_query_stats[query].average;
-                        const diff = branchAvg - baseAvg;
-                        const percentDiff = baseAvg === 0 ? (diff === 0 ? 0 : Infinity) : ((diff / baseAvg) * 100);
-
-                        comparisons[branch] = {
-                            value: branchAvg,
+                        comparisons[exec] = {
+                            value,
                             diff,
                             percentDiff,
+                            isReference: exec === referenceExecutable
+                        };
+                    } else {
+                         comparisons[exec] = {
+                            value: null,
+                            diff: null,
+                            percentDiff: null,
+                            isReference: false
                         };
                     }
                 });
 
-                return {
+                comparisonResults.push({
                     query,
-                    base: baseAvg,
-                    ...comparisons
-                };
+                    referenceValue,
+                    referenceExecutable,
+                    comparisons
+                });
             });
+
+            return comparisonResults;
         }
 
         function getTotalRuntimeComparison() {
-            if (!state.benchmarkData || !state.baseBranch || !state.benchmarkData.statistics[state.baseBranch]) return null;
+            const selectedExecs = Object.values(state.selectedExecutables);
+            if (selectedExecs.length === 0) return null;
 
-            const baseTotal = state.benchmarkData.statistics[state.baseBranch].total_runtime_stats.average;
-            const comparisons = {};
+            let referenceTotal = null;
+            let referenceExecutable = null;
 
-            state.selectedBranches.forEach(branch => {
-                if (branch !== state.baseBranch && state.benchmarkData.statistics[branch]) {
-                    const branchTotal = state.benchmarkData.statistics[branch].total_runtime_stats.average;
-                    comparisons[branch] = {
-                        value: branchTotal,
-                        diff: branchTotal - baseTotal,
-                        percentDiff: baseTotal === 0 ? (branchTotal === 0 ? 0 : Infinity) : ((branchTotal - baseTotal) / baseTotal) * 100
-                    };
+            selectedExecs.forEach(execResult => {
+                const total = execResult.statistics.total_runtime.average;
+                if (referenceTotal === null) {
+                    referenceTotal = total;
+                    referenceExecutable = execResult.executable;
+                } else if (state.comparisonMode === 'fastest' && total < referenceTotal) {
+                    referenceTotal = total;
+                    referenceExecutable = execResult.executable;
+                } else if (state.comparisonMode === 'slowest' && total > referenceTotal) {
+                    referenceTotal = total;
+                    referenceExecutable = execResult.executable;
                 }
             });
 
-            return { base: baseTotal, comparisons };
+            if (referenceTotal === null) return null;
+
+            const comparisons = {};
+            selectedExecs.forEach(execResult => {
+                const exec = execResult.executable;
+                const total = execResult.statistics.total_runtime.average;
+                const diff = total - referenceTotal;
+                const percentDiff = referenceTotal === 0 ? 0 : ((diff / referenceTotal) * 100);
+
+                comparisons[exec] = {
+                    value: total,
+                    diff,
+                    percentDiff,
+                    isReference: exec === referenceExecutable
+                };
+            });
+
+            return {
+                referenceTotal,
+                referenceExecutable,
+                comparisons
+            };
         }
 
-        // --- RENDERING LOGIC ---
-
         function render() {
-            if (!state.benchmarkData) {
-                app.innerHTML = getUploadView();
-                // Add event listener after rendering
-                const fileInput = document.getElementById('file-upload');
-                if (fileInput) {
-                    fileInput.addEventListener('change', handleFileUpload);
-                }
+            if (state.allResults.length === 0) {
+                app.innerHTML = getLoadingView();
             } else {
                 app.innerHTML = getAnalysisView();
                 addAnalysisEventListeners();
@@ -177,41 +241,15 @@
             }
         }
 
-        function getUploadView() {
+        function getLoadingView() {
             return `
                 <div class="p-6 max-w-4xl mx-auto">
                     <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis</h1>
-                    <p class="text-gray-600 mb-6">Upload your benchmark JSON file to analyze performance differences</p>
-
-                    ${state.error ? `<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">${state.error}</div>` : ''}
-
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                        <label class="cursor-pointer">
-                            <span class="text-blue-600 hover:text-blue-700 font-semibold">Click to upload</span>
-                            <input id="file-upload" type="file" accept=".json" class="hidden" />
-                        </label>
-                        <p class="text-sm text-gray-500 mt-2">or drop a JSON benchmark results file</p>
-                    </div>
-
-                    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 class="font-semibold mb-2">Expected JSON Format:</h3>
-                        <pre class="text-xs bg-white p-3 rounded overflow-x-auto">
-{
-  "branches": ["branch1", "branch2", ...], // or "executables"
-  "statistics": {
-    "branch1": {
-      "total_runtime_stats": { "average": 123456, ... },
-      "per_query_stats": {
-        "query1": { "average": 123, ... },
-        ...
-      }
-    },
-    ...
-  }
-}
-                        </pre>
-                    </div>
+                    ${state.error ? `
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">${state.error}</div>
+                    ` : `
+                        <p class="text-gray-600 mb-6">Loading benchmark results from <code>${RESULTS_PATH}</code>...</p>
+                    `}
                 </div>
             `;
         }
@@ -219,75 +257,112 @@
         function getAnalysisView() {
             const analysis = getAnalysis();
             const sortedAnalysis = [...analysis].sort((a, b) => {
-                const getWorst = (item) => {
-                    const comparisons = Object.keys(item).filter(k => k !== 'query' && k !== 'base');
-                    if (comparisons.length === 0) return 0;
-                    const values = comparisons.map(k => state.sortBy === 'absolute' ? item[k].diff : item[k].percentDiff);
-                    return Math.max(0, ...values); // Use 0 if all are improvements
+                const getWorstDiff = (item) => {
+                    const diffs = Object.values(item.comparisons)
+                                        .filter(c => !c.isReference && c.diff !== null)
+                                        .map(c => state.sortBy === 'absolute' ? c.diff : c.percentDiff);
+                    if (diffs.length === 0) return 0;
+                    if (state.comparisonMode === 'fastest') {
+                        return Math.max(0, ...diffs);
+                    } else { // slowest
+                        return Math.min(0, ...diffs);
+                    }
                 };
-                return getWorst(b) - getWorst(a);
+                return getWorstDiff(b) - getWorstDiff(a);
             });
-            const topQueries = sortedAnalysis.slice(0, state.showTop);
-            const totalRuntimeComparison = getTotalRuntimeComparison();
+
             const totalPages = Math.ceil(sortedAnalysis.length / state.showTop);
             const startIndex = state.currentPage * state.showTop;
             const endIndex = startIndex + state.showTop;
             const paginatedQueries = sortedAnalysis.slice(startIndex, endIndex);
-
-            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+            const totalRuntimeComparison = getTotalRuntimeComparison();
+            const executables = getAvailableExecutables();
+            const architectures = getAvailableArchitectures();
+            const selectedExecNames = Object.keys(state.selectedExecutables);
 
             return `
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis</h1>
-                        <p class="text-gray-600">Comparing multiple branches</p>
-                    </div>
-                    <button id="clear-data-btn" class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        Clear Data
-                    </button>
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis</h1>
+                    <p class="text-gray-600">Comparing executable performance</p>
                 </div>
 
-                <!-- Branch Selection -->
+                <!-- Architecture Selection -->
                 <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-lg font-semibold mb-3">Branch Selection</h2>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">Baseline Branch:</label>
-                        <select id="base-branch-select" class="border rounded px-3 py-2 w-full max-w-md">
-                            ${state.benchmarkData.branches.map(branch => `<option value="${branch}" ${state.baseBranch === branch ? 'selected' : ''}>${branch}</option>`).join('')}
-                        </select>
+                    <h2 class="text-lg font-semibold mb-3">Architecture</h2>
+                    <div class="flex gap-2">
+                        ${architectures.map(arch => `
+                            <button data-arch="${arch}" class="arch-btn px-4 py-2 rounded ${state.selectedArchitecture === arch ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                                ${arch}
+                            </button>
+                        `).join('')}
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Compare With:</label>
-                        <div id="toggle-branches" class="flex flex-wrap gap-2">
-                            ${state.benchmarkData.branches.map(branch => `
-                                <button data-branch="${branch}" class="px-3 py-1 rounded ${state.selectedBranches.includes(branch) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
-                                    ${branch}
-                                </button>
-                            `).join('')}
-                        </div>
+                </div>
+
+                <!-- Comparison Mode Selection -->
+                <div class="bg-white border rounded-lg p-4 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Comparison Mode</h2>
+                    <div class="flex gap-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="comparisonMode" value="fastest" class="form-radio text-blue-600" ${state.comparisonMode === 'fastest' ? 'checked' : ''}>
+                            <span class="ml-2">Show relative to <span class="font-bold">Fastest</span></span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="comparisonMode" value="slowest" class="form-radio text-blue-600" ${state.comparisonMode === 'slowest' ? 'checked' : ''}>
+                            <span class="ml-2">Show relative to <span class="font-bold">Slowest</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Executable Selection -->
+                <div class="bg-white border rounded-lg p-4 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Executables & Versions</h2>
+                    <div class="space-y-3">
+                        ${executables.map(exec => {
+                            const results = getResultsForExecutable(exec, state.selectedArchitecture);
+                            const selected = state.selectedExecutables[exec];
+                            return `
+                                <div class="border rounded p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-semibold">${exec}</span>
+                                        ${selected ? `<span class="text-xs text-gray-500">${selected.timestamp}</span>` : ''}
+                                    </div>
+                                    <select data-exec="${exec}" class="exec-version-select border rounded px-2 py-1 text-sm max-w-xs">
+                                        ${results.length === 0 ? '<option>No results for this architecture</option>' : ''}
+                                        ${results.map(r => `
+                                            <option value="${r.filename}" ${selected?.filename === r.filename ? 'selected' : ''}>
+                                                ${r.timestamp} (${r.statistics.total_runtime.median.toFixed(0)}ms median)
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
 
                 <!-- Total Runtime Comparison -->
                 ${totalRuntimeComparison ? `
                 <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-xl font-semibold mb-3">Total Runtime Comparison</h2>
+                    <h2 class="text-xl font-semibold mb-3">Total Runtime Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between p-2 bg-green-50 rounded">
-                                <span class="font-semibold">${state.baseBranch} (baseline):</span>
-                                <span>${totalRuntimeComparison.base.toFixed(2)}ms</span>
-                            </div>
-                            ${Object.entries(totalRuntimeComparison.comparisons).map(([branch, data]) => `
-                                <div class="flex items-center justify-between p-2 rounded ${data.diff > 0 ? 'bg-red-50' : 'bg-green-50'}">
-                                    <span class="font-semibold">${branch}:</span>
+                            ${Object.entries(totalRuntimeComparison.comparisons).sort(([, a], [, b]) => {
+                                if (state.comparisonMode === 'fastest') {
+                                    return a.value - b.value;
+                                } else {
+                                    return b.value - a.value;
+                                }
+                            }).map(([branch, data]) => `
+                                <div class="flex items-center justify-between p-2 rounded ${data.isReference ? 'bg-green-100 border border-green-300' : (data.diff > 0 ? 'bg-red-50' : 'bg-green-50')}">
+                                    <span class="font-semibold ${data.isReference ? 'text-green-800' : ''}">${branch} ${data.isReference ? `(${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})` : ''}:</span>
                                     <div class="text-right">
                                         <span class="mr-4">${data.value.toFixed(2)}ms</span>
-                                        <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
-                                            ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(2)}ms
-                                            (${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(2)}%)
-                                        </span>
+                                        ${!data.isReference ? `
+                                            <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(2)}ms
+                                                (${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(2)}%)
+                                            </span>
+                                        ` : ''}
                                     </div>
                                 </div>
                             `).join('')}
@@ -333,7 +408,7 @@
 
                 <!-- Chart -->
                 <div class="bg-white border rounded-lg p-4 mb-6">
-                    <h2 class="text-xl font-semibold mb-4">Query Performance Comparison</h2>
+                    <h2 class="text-xl font-semibold mb-4">Query Performance Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
                     <div class="relative h-[400px]">
                         <canvas id="queryPerformanceChart"></canvas>
                     </div>
@@ -345,29 +420,34 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-sm font-semibold">Query</th>
-                                <th class="px-4 py-3 text-right text-sm font-semibold">${state.baseBranch} (ms)</th>
-                                ${state.selectedBranches.filter(b => b !== state.baseBranch).map(branch => `
-                                    <th class="px-4 py-3 text-right text-sm font-semibold">${branch} (ms)</th>
-                                    <th class="px-4 py-3 text-right text-sm font-semibold">Δ</th>
+                                ${selectedExecNames.map(exec => `
+                                    <th class="px-4 py-3 text-right text-sm font-semibold">${exec} (ms)</th>
                                 `).join('')}
+                                <th class="px-4 py-3 text-right text-sm font-semibold">Reference</th>
+                                <th class="px-4 py-3 text-right text-sm font-semibold">Δ Avg</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
                             ${paginatedQueries.map((item, idx) => `
                                 <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
                                     <td class="px-4 py-3 font-mono font-semibold">${item.query}</td>
-                                    <td class="px-4 py-3 text-right">${item.base.toFixed(1)}</td>
-                                    ${state.selectedBranches.filter(b => b !== state.baseBranch).map(branch => {
-                                        const data = item[branch];
-                                        if (!data) return `<td class="px-4 py-3 text-right text-gray-400">-</td><td class="px-4 py-3 text-right text-gray-400">-</td>`;
-                                        return `
-                                            <td class="px-4 py-3 text-right">${data.value.toFixed(1)}</td>
-                                            <td class="px-4 py-3 text-right font-semibold ${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
-                                                ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
-                                                <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
-                                            </td>
-                                        `;
+                                    ${selectedExecNames.map(exec => {
+                                        const data = item.comparisons[exec];
+                                        return `<td class="px-4 py-3 text-right ${data?.isReference ? 'font-bold text-green-700' : ''}">${data?.value !== null ? data.value.toFixed(1) : '-'}</td>`;
                                     }).join('')}
+                                    <td class="px-4 py-3 text-right font-semibold">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
+                                    <td class="px-4 py-3 text-right font-semibold">
+                                        ${selectedExecNames.filter(e => e !== item.referenceExecutable).map(exec => {
+                                            const data = item.comparisons[exec];
+                                            if (!data || data.diff === null) return '-';
+                                            return `
+                                                <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                    ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
+                                                    <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
+                                                </span>
+                                            `;
+                                        }).join('<br>')}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -377,50 +457,66 @@
         }
 
         function addAnalysisEventListeners() {
-            document.getElementById('clear-data-btn').addEventListener('click', clearData);
-            document.getElementById('base-branch-select').addEventListener('change', (e) => {
-                state.baseBranch = e.target.value;
-                render();
+            document.querySelectorAll('input[name="comparisonMode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.comparisonMode = e.target.value;
+                    state.currentPage = 0;
+                    render();
+                });
             });
-            document.getElementById('toggle-branches').addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
-                    toggleBranch(e.target.dataset.branch);
-                }
+
+            document.querySelectorAll('.arch-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    state.selectedArchitecture = e.target.dataset.arch;
+                    processResults();
+                    render();
+                });
             });
+
+            document.querySelectorAll('.exec-version-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const exec = e.target.dataset.exec;
+                    const filename = e.target.value;
+                    changeExecutableVersion(exec, filename);
+                });
+            });
+
             document.getElementById('sort-by-select').addEventListener('change', (e) => {
                 state.sortBy = e.target.value;
                 state.currentPage = 0;
                 render();
             });
+
             document.getElementById('show-top-select').addEventListener('change', (e) => {
                 state.showTop = Number(e.target.value);
                 state.currentPage = 0;
                 render();
             });
+
             document.getElementById('prev-page-btn').addEventListener('click', () => {
                 if (state.currentPage > 0) {
                     state.currentPage--;
                     render();
                 }
             });
+
             document.getElementById('next-page-btn').addEventListener('click', () => {
-                state.currentPage++; 
-                render();
+                const totalPages = Math.ceil(getAnalysis().length / state.showTop);
+                if (state.currentPage < totalPages - 1) {
+                    state.currentPage++;
+                    render();
+                }
             });
         }
 
         function renderCharts() {
-            const colors = ['#6366f1', '#f43f5e', '#14b8a6', '#f59e0b', '#0ea5e9', '#d946ef']; 
-            const baseColor = '#22c55e'; 
+            const colors = ['#6366f1', '#f43f5e', '#14b8a6', '#f59e0b', '#0ea5e9', '#d946ef'];
+            const referenceColor = '#22c55e';
 
-            // --- Total Runtime Chart ---
             const totalRuntimeComparison = getTotalRuntimeComparison();
             const totalRuntimeCtx = document.getElementById('totalRuntimeChart')?.getContext('2d');
             if (totalRuntimeCtx && totalRuntimeComparison) {
-                const chartData = [
-                    { branch: state.baseBranch, time: totalRuntimeComparison.base },
-                    ...Object.entries(totalRuntimeComparison.comparisons).map(([branch, data]) => ({ branch, time: data.value }))
-                ];
+                const chartData = Object.entries(totalRuntimeComparison.comparisons).map(([branch, data]) => ({ branch, time: data.value, isReference: data.isReference }));
 
                 if (totalRuntimeChart) totalRuntimeChart.destroy();
                 totalRuntimeChart = new Chart(totalRuntimeCtx, {
@@ -430,7 +526,7 @@
                         datasets: [{
                             label: 'Total Time (ms)',
                             data: chartData.map(d => d.time),
-                            backgroundColor: chartData.map(d => d.branch === state.baseBranch ? baseColor : colors[state.selectedBranches.indexOf(d.branch) % colors.length]),
+                            backgroundColor: chartData.map((d, i) => d.isReference ? referenceColor : colors[i % colors.length]),
                             borderRadius: 4,
                         }]
                     },
@@ -446,7 +542,7 @@
                             }
                         },
                         scales: {
-                            y: { 
+                            y: {
                                 beginAtZero: false,
                                 title: { display: true, text: 'Total Time (ms)' }
                             }
@@ -455,33 +551,41 @@
                 });
             }
 
-            // --- Query Performance Chart ---
             const analysis = getAnalysis();
             const sortedAnalysis = [...analysis].sort((a, b) => {
-                const getWorst = (item) => {
-                    const comparisons = Object.keys(item).filter(k => k !== 'query' && k !== 'base');
-                    if (comparisons.length === 0) return 0;
-                    const values = comparisons.map(k => state.sortBy === 'absolute' ? item[k].diff : item[k].percentDiff);
-                    return Math.max(0, ...values);
+                 const getWorstDiff = (item) => {
+                    const diffs = Object.values(item.comparisons)
+                                        .filter(c => !c.isReference && c.diff !== null)
+                                        .map(c => state.sortBy === 'absolute' ? c.diff : c.percentDiff);
+                    if (diffs.length === 0) return 0;
+                    if (state.comparisonMode === 'fastest') {
+                        return Math.max(0, ...diffs);
+                    } else { // slowest
+                        return Math.min(0, ...diffs);
+                    }
                 };
-                return getWorst(b) - getWorst(a);
+                return getWorstDiff(b) - getWorstDiff(a);
             });
+
             const startIndex = state.currentPage * state.showTop;
             const endIndex = startIndex + state.showTop;
             const queriesForChart = sortedAnalysis.slice(startIndex, endIndex);
 
             const queryPerfCtx = document.getElementById('queryPerformanceChart')?.getContext('2d');
-
             if (queryPerfCtx && queriesForChart.length > 0) {
+                const selectedExecNames = Object.keys(state.selectedExecutables);
                 const chartData = {
                     labels: queriesForChart.map(item => item.query),
-                    datasets: state.selectedBranches.map((branch, idx) => ({
-                        label: branch,
+                    datasets: selectedExecNames.map((exec, idx) => ({
+                        label: exec,
                         data: queriesForChart.map(item => {
-                            if (branch === state.baseBranch) return item.base;
-                            return item[branch] ? item[branch].value : null;
+                            const data = item.comparisons[exec];
+                            return data ? data.value : null;
                         }),
-                        backgroundColor: branch === state.baseBranch ? baseColor : colors[idx % colors.length],
+                        backgroundColor: queriesForChart.map(item => {
+                            const data = item.comparisons[exec];
+                            return data && data.isReference ? referenceColor : colors[idx % colors.length];
+                        }),
                         borderRadius: 4,
                     }))
                 };
@@ -511,11 +615,9 @@
             }
         }
 
-        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadDefaultData();
+            loadAllResults();
         });
-
     </script>
 </body>
 </html>
