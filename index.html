@@ -36,6 +36,7 @@
             error: '',
             activeTableTab: null,
             visibleExecutables: [],
+            isWideScreen: window.matchMedia('(min-width: 601px)').matches,
         };
 
         let totalRuntimeChart = null;
@@ -323,6 +324,11 @@
             } else if (selectedExecNames.length === 0) {
                 state.activeTableTab = null;
             }
+
+            const tableHtml = state.isWideScreen 
+                ? getWideTableView(paginatedQueries, selectedExecNames) 
+                : getNarrowTableView(paginatedQueries, selectedExecNames);
+
             return `
                 <div class="mb-6">
                     <h1 class="text-3xl font-bold mb-2">Benchmark Performance Analysis - Part 1</h1>
@@ -439,7 +445,7 @@
                 </div>
 
                 <div class="mt-6">
-                    <div class="flex flex-wrap justify-between items-end gap-4 mb-4">
+                    <div class="flex flex-wrap justify-center sm:justify-between items-end gap-4 mb-4">
                         <div class="flex gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-2">Sort By:</label>
@@ -451,6 +457,7 @@
                             <div>
                                 <label class="block text-sm font-medium mb-2">Show Per Page:</label>
                                 <select id="show-top-select" class="border rounded px-3 py-2">
+                                    <option value="5" ${state.showTop === 5 ? 'selected' : ''}>5</option>
                                     <option value="10" ${state.showTop == 10 ? 'selected' : ''}>10</option>
                                     <option value="20" ${state.showTop == 20 ? 'selected' : ''}>20</option>
                                     <option value="30" ${state.showTop == 30 ? 'selected' : ''}>30</option>
@@ -459,7 +466,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <div class="flex items-center gap-2 w-full sm:justify-end justify-center">
                             <button id="prev-page-btn" class="px-3 py-1.5 border rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" ${state.currentPage === 0 ? 'disabled' : ''}>
                                 Previous
                             </button>
@@ -470,54 +477,112 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border rounded-lg overflow-hidden md:block">
-                        <div class="md:hidden border-b">
-                            <div class="flex -mb-px overflow-x-auto">
-                                ${selectedExecNames.map(exec => `
-                                    <button data-tab-target="${exec}" class="table-tab-btn whitespace-nowrap py-3 px-4 font-semibold text-sm ${state.activeTableTab === exec ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}">
-                                        ${exec}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ${selectedExecNames.map(exec => `
-                            <div class="${state.activeTableTab === exec ? 'block' : 'hidden'} md:block">
-                                <table class="w-full">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-sm font-semibold">Query</th>
-                                            <th class="px-4 py-3 text-right text-sm font-semibold">${exec} (ms)</th>
-                                            <th class="px-4 py-3 text-right text-sm font-semibold">Reference</th>
-                                            <th class="px-4 py-3 text-right text-sm font-semibold">Δ Avg</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y">
-                                        ${paginatedQueries.map((item, idx) => {
-                                            const data = item.comparisons[exec];
-                                            if (!data) return '';
-                                            return `
-                                                <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                                                    <td class="px-4 py-3 font-mono font-semibold">${item.query}</td>
-                                                    <td class="px-4 py-3 text-right ${data.isReference ? 'font-bold text-green-700' : ''}">${data.value !== null ? data.value.toFixed(1) : '-'}</td>
-                                                    <td class="px-4 py-3 text-right font-semibold">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
-                                                    <td class="px-4 py-3 text-right font-semibold">
-                                                        ${!data.isReference && data.diff !== null ? `
-                                                            <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
-                                                                ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
-                                                                <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
-                                                            </span>
-                                                        ` : (data.isReference ? 'Reference' : '-')}
-                                                    </td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        `).join('')}
-                        ${selectedExecNames.length === 0 ? '<p class="p-4 text-gray-500">Select an executable to see detailed query results.</p>' : ''}
+                    <div class="bg-white border rounded-lg overflow-x-auto">
+                        ${tableHtml}
                     </div>
                 </div>
+            `;
+        }
+
+        function getWideTableView(paginatedQueries, selectedExecNames) {
+            if (selectedExecNames.length === 0) {
+                return '<p class="p-4 text-gray-500">Select an executable to see detailed query results.</p>';
+            }
+
+            return `
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-semibold sticky left-0 bg-gray-50 z-10">Query</th>
+                            ${selectedExecNames.map(exec => `
+                                <th colspan="3" class="px-4 py-3 text-center text-sm font-semibold border-l">${exec}</th>
+                            `).join('')}
+                        </tr>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold sticky left-0 bg-gray-50 z-10"></th>
+                            ${selectedExecNames.map(() => `
+                                <th class="px-4 py-2 text-right text-xs font-semibold border-l">Time (ms)</th>
+                                <th class="px-4 py-2 text-right text-xs font-semibold">Ref</th>
+                                <th class="px-4 py-2 text-right text-xs font-semibold">Δ Avg</th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        ${paginatedQueries.map((item, idx) => `
+                            <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                                <td class="px-4 py-3 font-mono font-semibold text-sm sticky left-0 z-10 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">${item.query}</td>
+                                ${selectedExecNames.map(exec => {
+                                    const data = item.comparisons[exec];
+                                    if (!data) return '<td colspan="3" class="px-4 py-3 border-l text-center text-gray-400">-</td>';
+                                    return `
+                                        <td class="px-4 py-3 text-right border-l ${data.isReference ? 'font-bold text-green-700' : ''}">${data.value !== null ? data.value.toFixed(1) : '-'}</td>
+                                        <td class="px-4 py-3 text-right text-xs">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
+                                        <td class="px-4 py-3 text-right">
+                                            ${!data.isReference && data.diff !== null ? `
+                                                <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                    ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
+                                                    <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
+                                                </span>
+                                            ` : (data.isReference ? '<span class="text-green-700">Ref</span>' : '-')}
+                                        </td>
+                                    `;
+                                }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function getNarrowTableView(paginatedQueries, selectedExecNames) {
+             if (selectedExecNames.length === 0) {
+                return '<p class="p-4 text-gray-500">Select an executable to see detailed query results.</p>';
+            }
+            return `
+                <div class="md:hidden border-b">
+                    <div class="flex -mb-px overflow-x-auto">
+                        ${selectedExecNames.map(exec => `
+                            <button data-tab-target="${exec}" class="table-tab-btn whitespace-nowrap py-3 px-4 font-semibold text-sm ${state.activeTableTab === exec ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}">
+                                ${exec}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+                ${selectedExecNames.map(exec => `
+                    <div class="${state.activeTableTab === exec ? 'block' : 'hidden'}">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold">Query</th>
+                                    <th class="px-4 py-3 text-right text-sm font-semibold">${exec} (ms)</th>
+                                    <th class="px-4 py-3 text-right text-sm font-semibold">Reference</th>
+                                    <th class="px-4 py-3 text-right text-sm font-semibold">Δ Avg</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${paginatedQueries.map((item, idx) => {
+                                    const data = item.comparisons[exec];
+                                    if (!data) return '';
+                                    return `
+                                        <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                                            <td class="px-4 py-3 font-mono font-semibold">${item.query}</td>
+                                            <td class="px-4 py-3 text-right ${data.isReference ? 'font-bold text-green-700' : ''}">${data.value !== null ? data.value.toFixed(1) : '-'}</td>
+                                            <td class="px-4 py-3 text-right font-semibold">${item.referenceExecutable} (${item.referenceValue.toFixed(1)})</td>
+                                            <td class="px-4 py-3 text-right font-semibold">
+                                                ${!data.isReference && data.diff !== null ? `
+                                                    <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
+                                                        ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(1)}
+                                                        <span class="text-xs ml-1">(${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(1)}%)</span>
+                                                    </span>
+                                                ` : (data.isReference ? 'Reference' : '-')}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `).join('')}
             `;
         }
 
@@ -719,6 +784,17 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const mediaQuery = window.matchMedia('(min-width: 601px)');
+            
+            function handleScreenChange(e) {
+                if (state.isWideScreen !== e.matches) {
+                    state.isWideScreen = e.matches;
+                    render();
+                }
+            }
+
+            mediaQuery.addEventListener('change', handleScreenChange);
+
             loadAllResults();
         });
     </script>
