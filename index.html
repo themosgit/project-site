@@ -13,6 +13,17 @@
     <div id="app" class="p-6 w-full"></div>
     <script>
         const RESULTS_PATH = './benchmark_results/';
+        
+        const BENCHMARK_FILES = [             'results_cuckoo_arm64_2025-11-02_15-36-46.json',
+            'results_cuckoo_base_arm64_2025-11-02_15-36-46.json',
+            'results_fast_arm64_2025-11-02_15-26-24.json',
+            'results_fast_arm64_2025-11-02_15-36-46.json',
+            'results_hopscotch_arm64_2025-11-02_15-36-46.json',
+            'results_hopscotch_base_arm64_2025-11-02_15-36-46.json',
+            'results_robinhood_arm64_2025-11-02_15-26-24.json',
+            'results_robinhood_arm64_2025-11-02_15-36-46.json',
+            'results_robinhood_base_arm64_2025-11-02_15-36-46.json' ];
+
 
         const state = {
             allResults: [],
@@ -33,24 +44,23 @@
         const app = document.getElementById('app');
 
         async function loadAllResults() {
+            // New logic: Use the embedded list of files instead of fetching the directory HTML.
             try {
-                const response = await fetch(RESULTS_PATH);
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a'))
-                    .map(a => a.getAttribute('href'))
-                    .filter(href => href && href.startsWith('results_') && href.endsWith('.json'));
+                const links = BENCHMARK_FILES.filter(href => href.endsWith('.json'));
 
                 if (links.length === 0) {
-                    state.error = `No benchmark result files found in '${RESULTS_PATH}'. Please ensure results_*.json files are in the specified directory.`;
+                    state.error = `No benchmark result files defined in BENCHMARK_FILES array.`;
                     render();
                     return;
                 }
 
                 const allData = await Promise.all(
                     links.map(async (file) => {
+                        // Corrected: file already includes the filename, just need the path prefix
                         const res = await fetch(`${RESULTS_PATH}${file}`);
+                        if (!res.ok) {
+                             throw new Error(`Failed to fetch ${file}: ${res.statusText}`);
+                        }
                         const data = await res.json();
                         return { filename: file, ...data };
                     })
@@ -60,7 +70,7 @@
                 processResults();
                 render();
             } catch (e) {
-                state.error = `Failed to load results from '${RESULTS_PATH}': ${e.message}`;
+                state.error = `Failed to load all results from '${RESULTS_PATH}': ${e.message}`;
                 render();
             }
         }
@@ -84,14 +94,27 @@
             });
 
             state.selectedExecutables = {};
-            const defaultExecutable = 'fast';
+            // Updated default executable to 'fast' if available, as 'fast' is present in your file list.
+            const defaultExecutable = 'fast'; 
             const archResults = byExecAndArch[`${defaultExecutable}_${state.selectedArchitecture}`];
             if (archResults && archResults.length > 0) {
                 state.selectedExecutables[defaultExecutable] = archResults[0];
+            } else {
+                 // Fallback if 'fast' isn't available for the default architecture
+                 const allExecutables = getAvailableExecutables();
+                 if (allExecutables.length > 0) {
+                     const firstExec = allExecutables[0];
+                     const firstArchResults = byExecAndArch[`${firstExec}_${state.selectedArchitecture}`];
+                     if (firstArchResults && firstArchResults.length > 0) {
+                        state.selectedExecutables[firstExec] = firstArchResults[0];
+                     }
+                 }
             }
 
+
             state.byExecAndArch = byExecAndArch;
-            state.visibleExecutables = [defaultExecutable];
+            // Set visible executables based on the initial selection
+            state.visibleExecutables = Object.keys(state.selectedExecutables);
         }
 
         function getAvailableArchitectures() {
@@ -121,7 +144,10 @@
 
             const allQueries = new Set();
             selectedExecs.forEach(exec => {
-                Object.keys(exec.statistics.per_query).forEach(query => allQueries.add(query));
+                // Check if statistics and per_query exist before accessing
+                if (exec.statistics && exec.statistics.per_query) {
+                    Object.keys(exec.statistics.per_query).forEach(query => allQueries.add(query));
+                }
             });
 
             const comparisonResults = [];
@@ -131,7 +157,7 @@
                 let referenceExecutable = null;
 
                 selectedExecs.forEach(execResult => {
-                    const queryStats = execResult.statistics.per_query[query];
+                    const queryStats = execResult.statistics?.per_query?.[query];
                     if (queryStats) {
                         const avg = queryStats.average;
                         if (referenceValue === null) {
@@ -152,7 +178,7 @@
                 const comparisons = {};
                 selectedExecs.forEach(execResult => {
                     const exec = execResult.executable;
-                    const queryStats = execResult.statistics.per_query[query];
+                    const queryStats = execResult.statistics?.per_query?.[query];
                     
                     if (queryStats) {
                         const value = queryStats.average;
@@ -194,16 +220,18 @@
             let referenceExecutable = null;
 
             selectedExecs.forEach(execResult => {
-                const total = execResult.statistics.total_runtime.average / 1000; // Convert to seconds
-                if (referenceTotal === null) {
-                    referenceTotal = total;
-                    referenceExecutable = execResult.executable;
-                } else if (state.comparisonMode === 'fastest' && total < referenceTotal) {
-                    referenceTotal = total;
-                    referenceExecutable = execResult.executable;
-                } else if (state.comparisonMode === 'slowest' && total > referenceTotal) { // No change needed here, but for context
-                    referenceTotal = total;
-                    referenceExecutable = execResult.executable;
+                const total = execResult.statistics?.total_runtime?.average ? execResult.statistics.total_runtime.average / 1000 : null; // Convert to seconds
+                if (total !== null) {
+                    if (referenceTotal === null) {
+                        referenceTotal = total;
+                        referenceExecutable = execResult.executable;
+                    } else if (state.comparisonMode === 'fastest' && total < referenceTotal) {
+                        referenceTotal = total;
+                        referenceExecutable = execResult.executable;
+                    } else if (state.comparisonMode === 'slowest' && total > referenceTotal) { 
+                        referenceTotal = total;
+                        referenceExecutable = execResult.executable;
+                    }
                 }
             });
 
@@ -212,16 +240,26 @@
             const comparisons = {};
             selectedExecs.forEach(execResult => {
                 const exec = execResult.executable;
-                const total = execResult.statistics.total_runtime.average / 1000; // Convert to seconds
-                const diff = total - referenceTotal;
-                const percentDiff = referenceTotal === 0 ? 0 : ((diff / referenceTotal) * 100);
+                const total = execResult.statistics?.total_runtime?.average ? execResult.statistics.total_runtime.average / 1000 : null; // Convert to seconds
+                
+                if (total !== null) {
+                    const diff = total - referenceTotal;
+                    const percentDiff = referenceTotal === 0 ? 0 : ((diff / referenceTotal) * 100);
 
-                comparisons[exec] = {
-                    value: total,
-                    diff,
-                    percentDiff,
-                    isReference: exec === referenceExecutable
-                };
+                    comparisons[exec] = {
+                        value: total,
+                        diff,
+                        percentDiff,
+                        isReference: exec === referenceExecutable
+                    };
+                } else {
+                     comparisons[exec] = {
+                        value: null,
+                        diff: null,
+                        percentDiff: null,
+                        isReference: false
+                    };
+                }
             });
 
             return {
@@ -248,7 +286,7 @@
                     ${state.error ? `
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">${state.error}</div>
                     `: `
-                        <p class="text-gray-600 mb-6">Loading benchmark results from <code>${RESULTS_PATH}</code>...</p>
+                        <p class="text-gray-600 mb-6">Loading benchmark results from <code>${RESULTS_PATH}</code> using embedded file list...</p>
                     `}
                 </div>
             `;
@@ -292,9 +330,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left Column: Controls -->
                     <div class="lg:col-span-1 space-y-6">
-                        <!-- Architecture Selection -->
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-lg font-semibold mb-3">Architecture</h2>
                             <div class="flex gap-2">
@@ -306,7 +342,6 @@
                             </div>
                         </div>
 
-                        <!-- Algorithm Filter -->
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-lg font-semibold mb-3">Filter Algorithms</h2>
                             <div class="flex flex-wrap gap-2">
@@ -319,7 +354,6 @@
                         </div>
 
 
-                        <!-- Comparison Mode Selection -->
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-lg font-semibold mb-3">Comparison Mode</h2>
                             <div class="flex gap-4">
@@ -334,7 +368,6 @@
                             </div>
                         </div>
 
-                        <!-- Executable Selection -->
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-lg font-semibold mb-3">Executables & Versions</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3">
@@ -351,7 +384,7 @@
                                                 ${results.length === 0 ? '<option>No results for this architecture</option>' : ''}
                                                 ${results.map(r => `
                                                     <option value="${r.filename}" ${selected?.filename === r.filename ? 'selected' : ''}>
-                                                        ${r.timestamp} (${r.statistics.total_runtime.median.toFixed(0)}ms, ${r.iterations_measured} iterations)
+                                                        ${r.timestamp} (${r.statistics?.total_runtime?.median?.toFixed(0) || 'N/A'}ms, ${r.iterations_measured} iterations)
                                                     </option>
                                                 `).join('')}
                                             </select>
@@ -362,9 +395,7 @@
                         </div>
                     </div>
 
-                    <!-- Right Column: Results -->
                     <div class="lg:col-span-2 space-y-6">
-                        <!-- Total Runtime Comparison -->
                         ${totalRuntimeComparison ? `
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-xl font-semibold mb-3">Total Runtime Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
@@ -372,16 +403,16 @@
                                 <div class="space-y-2">
                                     ${Object.entries(totalRuntimeComparison.comparisons).sort(([, a], [, b]) => {
                                         if (state.comparisonMode === 'fastest') {
-                                            return a.value - b.value;
+                                            return (a.value ?? Infinity) - (b.value ?? Infinity);
                                         } else {
-                                            return b.value - a.value;
+                                            return (b.value ?? -Infinity) - (a.value ?? -Infinity);
                                         }
                                     }).map(([branch, data]) => `
                                         <div class="flex items-center justify-between p-2 rounded ${data.isReference ? 'bg-green-100 border border-green-300' : (data.diff > 0 ? 'bg-red-50' : 'bg-green-50')}">
                                             <span class="font-semibold ${data.isReference ? 'text-green-800' : ''}">${branch} ${data.isReference ? `(${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})` : ''}:</span>
                                             <div class="text-right">
-                                                <span class="mr-4">${data.value.toFixed(3)}s</span>
-                                                ${!data.isReference ? `
+                                                <span class="mr-4">${data.value !== null ? data.value.toFixed(3) + 's' : 'N/A'}</span>
+                                                ${!data.isReference && data.diff !== null ? `
                                                     <span class="${data.diff > 0 ? 'text-red-600' : 'text-green-600'}">
                                                         ${data.diff > 0 ? '+' : ''}${data.diff.toFixed(3)}s
                                                         (${data.diff > 0 ? '+' : ''}${data.percentDiff.toFixed(2)}%)
@@ -398,7 +429,6 @@
                         </div>
                         ` : ''}
 
-                        <!-- Chart -->
                         <div class="bg-white border rounded-lg p-4">
                             <h2 class="text-xl font-semibold mb-4">Query Performance Comparison (Relative to ${state.comparisonMode === 'fastest' ? 'Fastest' : 'Slowest'})</h2>
                             <div class="relative h-[400px]">
@@ -408,9 +438,7 @@
                     </div>
                 </div>
 
-                <!-- Table Controls and Detailed Table -->
                 <div class="mt-6">
-                    <!-- Controls -->
                     <div class="flex flex-wrap justify-between items-end gap-4 mb-4">
                         <div class="flex gap-4">
                             <div>
@@ -442,7 +470,6 @@
                         </div>
                     </div>
 
-                    <!-- Detailed Table -->
                     <div class="bg-white border rounded-lg overflow-hidden md:block">
                         <div class="md:hidden border-b">
                             <div class="flex -mb-px overflow-x-auto">
@@ -526,7 +553,7 @@
                     const exec = e.target.dataset.exec;
                     const filename = e.target.value;
                     changeExecutableVersion(exec, filename);
-                    state.activeTableTab = null;
+                    // No need to reset activeTableTab here, as the executable is still selected, just the version changed.
                 });
             });
 
@@ -571,6 +598,11 @@
                 state.visibleExecutables.splice(index, 1);
                 // Also remove it from the active selection
                 delete state.selectedExecutables[exec];
+                // Update the active table tab if the removed executable was active
+                if (state.activeTableTab === exec) {
+                    const remainingExecs = Object.keys(state.selectedExecutables);
+                    state.activeTableTab = remainingExecs.length > 0 ? remainingExecs[0] : null;
+                }
             } else {
                 state.visibleExecutables.push(exec);
                 // Re-select the latest version for this newly visible architecture
@@ -586,7 +618,9 @@
             const totalRuntimeComparison = getTotalRuntimeComparison();
             const totalRuntimeCtx = document.getElementById('totalRuntimeChart')?.getContext('2d');
             if (totalRuntimeCtx && totalRuntimeComparison) {
-                const chartData = Object.entries(totalRuntimeComparison.comparisons).map(([branch, data]) => ({ branch, time: data.value, isReference: data.isReference }));
+                const chartData = Object.entries(totalRuntimeComparison.comparisons)
+                    .filter(([, data]) => data.value !== null)
+                    .map(([branch, data]) => ({ branch, time: data.value, isReference: data.isReference }));
 
                 if (totalRuntimeChart) totalRuntimeChart.destroy();
                 totalRuntimeChart = new Chart(totalRuntimeCtx, {
@@ -613,7 +647,7 @@
                         },
                         scales: {
                             y: {
-                                beginAtZero: false,
+                                beginAtZero: true,
                                 title: { display: true, text: 'Total Time (s)' }
                             }
                         }
