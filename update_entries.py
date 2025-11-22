@@ -48,13 +48,14 @@ def update_benchmark_files_list(part_name):
         print(f"An error occurred: {e}")
 
 if __name__ == '__main__':
+    """ Now runs as python update_entries.py --part part1 """
     parser = argparse.ArgumentParser(description="Inject benchmark JSON filenames into JS assets.")
     parser.add_argument(
         '-p', '--part', 
         required=True, 
         help="The part name (e.g., part1, part2). Used for folder and file resolution."
     )
-
+    
     args = parser.parse_args()
     
     update_benchmark_files_list(args.part)
