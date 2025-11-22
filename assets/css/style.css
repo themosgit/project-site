@@ -1,3 +1,7 @@
+body {
+    font-family: 'Open Sans';
+}
+
 .d3-tooltip {
     position: absolute;
     text-align: left;
