@@ -1,5 +1,8 @@
 const RESULTS_PATH = '../benchmark_results/part2/'; 
-const BENCHMARK_FILES = [];
+const BENCHMARK_FILES = [
+    'results_fast_arm64_2025-11-22_23-24-14.json',
+    'results_faster_arm64_2025-11-22_23-24-14.json'
+];
 
 const state = {
     allResults: [],
