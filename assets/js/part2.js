@@ -235,8 +235,19 @@ function renderControls() {
         .attr("class", d => `px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${state.selectedArchitecture === d ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`)
         .text(d => d)
         .on("click", (e, d) => {
+                        if (state.selectedArchitecture === d) return; // Do nothing if it's the same arch
             state.selectedArchitecture = d;
-            processResults(); 
+            
+            // Reset and re-select executables for the new architecture
+            const newSelectedExecutables = {};
+            state.visibleExecutables.forEach(exec => {
+                const key = `${exec}_${d}`;
+                if (state.byExecAndArch[key] && state.byExecAndArch[key].length > 0) {
+                    newSelectedExecutables[exec] = state.byExecAndArch[key][0]; // Select the latest one
+                }
+            });
+            state.selectedExecutables = newSelectedExecutables;
+
             updateView();
         });
 
