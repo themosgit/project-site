@@ -348,6 +348,25 @@ function renderControls() {
             .text(r => `${r.timestamp.split('_')[0]} (${(r.statistics?.total_runtime?.average/1000).toFixed(2)}s)`);
         options.exit().remove();
     });
+
+    // Ensure the pie-select in the HTML is populated and wired
+    const pieSelect = d3.select("#pie-exec-select");
+    pieSelect.html(""); // clear any previous options
+
+    const execNames = Object.keys(state.selectedExecutables);
+    if (execNames.length > 0 && !state.pieTargetExec) state.pieTargetExec = execNames[0];
+
+    pieSelect.selectAll("option")
+        .data(execNames)
+        .enter().append("option")
+        .attr("value", d => d)
+        .property("selected", d => d === state.pieTargetExec)
+        .text(d => d);
+
+    pieSelect.on("change", (e) => {
+        state.pieTargetExec = e.target.value;
+        renderPieChart();
+    });
 }
 
 // --- D3 Charts ---
@@ -423,7 +442,11 @@ function renderTotalRuntimeChart() {
             .attr("class", "text-xs font-medium fill-current text-gray-600 dark:text-gray-300")
             .attr("x", d => x(d.value) + 5)
             .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => `${d.value.toFixed(2)}s`);
+            .text(d => {
+                if (d.isRef) return `${d.value.toFixed(2)}s`;
+                const sign = d.pDiff > 0 ? '+' : '';
+                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
+            });
 
     } else {
         // Desktop: Labels on Left
@@ -438,7 +461,11 @@ function renderTotalRuntimeChart() {
             .attr("class", "label-val text-xs font-medium fill-current text-gray-700 dark:text-gray-200")
             .attr("x", d => x(d.value) + 8)
             .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => `${d.value.toFixed(2)}s`);
+            .text(d => {
+                if (d.isRef) return `${d.value.toFixed(2)}s`;
+                const sign = d.pDiff > 0 ? '+' : '';
+                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
+            });
     }
 
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(isMobile ? 3 : 5)).style("color", "#9ca3af").select(".domain").remove();

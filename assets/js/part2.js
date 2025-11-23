@@ -219,6 +219,27 @@ function initUI() {
         .selectAll("option")
         .data([5, 10, 20, 50])
         .enter().append("option").attr("value", d => d).text(d => d);
+
+    // Populate pie select initially and wire handler
+    const pieSelect = d3.select("#pie-exec-select");
+    function refreshPieOptions() {
+        const execs = state.visibleExecutables.length ? state.visibleExecutables : [...new Set(state.allResults.map(r => r.executable))];
+        pieSelect.html("");
+        if (execs.length > 0 && !state.pieTargetExec) state.pieTargetExec = execs[0];
+        const opts = pieSelect.selectAll("option").data(execs);
+        opts.enter().append("option").merge(opts)
+            .attr("value", d => d)
+            .property("selected", d => d === state.pieTargetExec)
+            .text(d => d);
+        opts.exit().remove();
+    }
+    pieSelect.on("change", (e) => {
+        state.pieTargetExec = e.target.value;
+        renderPieChart();
+    });
+
+    // ensure initial options
+    refreshPieOptions();
 }
 
 function updateView() {
@@ -306,6 +327,9 @@ function renderControls() {
             .text(r => `${r.timestamp.split('_')[0]} (${(r.statistics?.total_runtime?.average/1000).toFixed(2)}s)`);
         options.exit().remove();
     });
+
+    // refresh pie-select options when controls change
+    if (typeof refreshPieOptions === 'function') refreshPieOptions();
 }
 
 // --- D3 Charts ---
@@ -381,7 +405,11 @@ function renderTotalRuntimeChart() {
             .attr("class", "text-xs font-medium fill-current text-gray-600 dark:text-gray-300")
             .attr("x", d => x(d.value) + 5)
             .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => `${d.value.toFixed(2)}s`);
+            .text(d => {
+                if (d.isRef) return `${d.value.toFixed(2)}s`;
+                const sign = d.pDiff > 0 ? '+' : '';
+                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
+            });
 
     } else {
         // Desktop: Labels on Left
@@ -396,7 +424,11 @@ function renderTotalRuntimeChart() {
             .attr("class", "label-val text-xs font-medium fill-current text-gray-700 dark:text-gray-200")
             .attr("x", d => x(d.value) + 8)
             .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => `${d.value.toFixed(2)}s`);
+            .text(d => {
+                if (d.isRef) return `${d.value.toFixed(2)}s`;
+                const sign = d.pDiff > 0 ? '+' : '';
+                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
+            });
     }
 
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(isMobile ? 3 : 5)).style("color", "#9ca3af").select(".domain").remove();
