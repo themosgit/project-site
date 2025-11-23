@@ -431,7 +431,7 @@ function renderTotalRuntimeChart() {
         svg.selectAll(".label-name")
             .data(data)
             .join("text")
-            .attr("class", "text-xs font-bold fill-current text-gray-700 dark:text-gray-200")
+            .attr("class", "text-xs font-bold fill-current text-gray-700 dark:text-gray-500")
             .attr("x", x(0))
             .attr("y", d => y(d.executable) - 5)
             .text(d => d.executable);
@@ -458,7 +458,7 @@ function renderTotalRuntimeChart() {
         svg.selectAll(".label-val")
             .data(data)
             .join("text")
-            .attr("class", "label-val text-xs font-medium fill-current text-gray-700 dark:text-gray-200")
+            .attr("class", "label-val text-xs font-medium fill-current text-gray-700 dark:text-gray-500")
             .attr("x", d => x(d.value) + 8)
             .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
             .text(d => {
@@ -634,7 +634,7 @@ function renderPieChart() {
     const totalTime = d3.sum(data, d => d.value);
     const centerGroup = svg.append("text")
         .attr("text-anchor", "middle")
-        .attr("class", "fill-current text-gray-700 dark:text-gray-200");
+        .attr("class", "fill-current text-gray-700 dark:text-gray-500");
 
     centerGroup.append("tspan")
         .attr("dy", "-0.2em")
