@@ -597,7 +597,7 @@ function renderPieChart() {
     const totalTime = d3.sum(data, d => d.value);
     const centerGroup = svg.append("text")
         .attr("text-anchor", "middle")
-        .attr("class", "fill-current text-gray-700 dark:text-gray-500");
+        .attr("class", "fill-current text-gray-700  dark:text-gray-500");
 
     centerGroup.append("tspan")
         .attr("dy", "-0.2em")
