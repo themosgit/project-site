@@ -1,5 +1,5 @@
 {
-  "executable": "faster",
+  "executable": "column_t",
   "timestamp": "2025-11-26 19:02:11",
   "architecture": "x86_64",
   "iterations_measured": 10,

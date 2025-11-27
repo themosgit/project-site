@@ -1,5 +1,5 @@
 {
-  "executable": "faster",
+  "executable": "column_t",
   "timestamp": "2025-11-26 22:35:31",
   "architecture": "arm64",
   "iterations_measured": 10,
