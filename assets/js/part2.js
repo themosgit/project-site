@@ -10,6 +10,8 @@ const BENCHMARK_FILES = [
     'results_faster_arm64_2025-11-27_23-53-43.json',
     'results_faster_arm64_2025-11-28_02-29-28.json',
     'results_faster_arm64_2025-11-28_03-25-03.json',
+    'results_faster_arm64_2025-11-28_12-34-59.json',
+    'results_faster_arm64_2025-11-30_16-24-50.json',
     'results_faster_x86_64_2025-11-27_20-19-59.json',
     'results_faster_x86_64_2025-11-28_00-14-48.json',
     'results_faster_x86_64_2025-11-28_02-27-42.json',
