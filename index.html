@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-    <title>Benchmark Analysis Web</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <title>Benchmark Analysis Web</title>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
 
@@ -18,7 +22,7 @@
             <p class="text-xl text-gray-600">Select a part to view the analysis details.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
             <!-- Card 1 -->
             <a href="./pages/part1.html" class="group block bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border-t-4 border-blue-500">
                 <div class="p-8 text-center">
@@ -37,11 +41,46 @@
                 </div>
             </a>
 
-            <!-- Card 3 here -->
+            <!-- Card 3 Placeholder -->
+            <!-- <div class="group block bg-gray-50 rounded-xl shadow-sm border border-dashed border-gray-300 flex items-center justify-center min-h-[250px]">
+                <p class="text-gray-400">Card 3</p>
+            </div> -->
+        </div>
+
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Gallery</h2>
+            
+            <!-- Swiper Container -->
+            <div class="swiper manolates-swiper rounded-xl shadow-lg bg-white">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates1.jpg" alt="Slide 1">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates2.jpg" alt="Slide 2">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates3.jpg" alt="Slide 3">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates4.jpg" alt="Slide 4">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates5.jpg" alt="Slide 5">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="assets/images/manolates6.jpg" alt="Slide 6">
+                    </div>
+                </div>
+                
+                <div class="swiper-pagination"></div>
+            </div>
         </div>
     </div>
 
-    
+    <!-- Scripts -->
     <script src="assets/js/layout.js"></script>
+    <script src="assets/js/swiper-bundle.min.js"></script>
+    <script src="assets/js/manolates-swiper.js"></script>
 </body>
 </html>

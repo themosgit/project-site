@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const headerHtml = `
-        <nav class="bg-white shadow-md relative z-50">
+        <nav class="bg-white shadow-md fixed top-0 left-0 w-full z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
@@ -74,6 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     document.body.insertAdjacentHTML('afterbegin', headerHtml);
+    
+    document.body.classList.add('pt-16');
+
+    // Inject Footer
     document.body.insertAdjacentHTML('beforeend', footerHtml);
 
     const menuBtn = document.getElementById('mobile-menu-btn');
