@@ -47,3 +47,21 @@ body {
     object-fit: cover; 
     border-radius: 0.75rem; 
 }
+
+.swiper-container-wrapper {
+    position: relative;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+    color: black; 
+    transition: all 0.3s ease;
+}
+
+.swiper-button-prev {
+    left: -65px !important; 
+}
+
+.swiper-button-next {
+    right: -65px !important;
+}
