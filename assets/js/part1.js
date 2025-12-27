@@ -48,6 +48,14 @@ const BENCHMARK_FILES = [
     'results_robinhood_x86_64_2025-11-09_02-42-02.json'
 ];
 
+// Color palettes (replacing D3 color scales)
+const COLOR_PALETTE = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'];
+const QUERY_COLOR_PALETTE = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9d9a', '#9c755f', '#bab0ab'];
+
+function getColor(index, palette) {
+    return palette[index % palette.length];
+}
+
 const state = {
     allResults: [],
     byExecAndArch: {},
@@ -58,23 +66,19 @@ const state = {
     sortBy: 'absolute',
     showTop: 10,
     currentPage: 0,
-    pieTargetExec: null, 
-    colorScale: d3.scaleOrdinal(d3.schemeSet2),
-    queryColorScale: d3.scaleOrdinal(d3.schemeTableau10) 
+    pieTargetExec: null,
+    charts: {
+        totalRuntime: null,
+        queryPerf: null,
+        pie: null
+    }
 };
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-    createTooltip();
     await loadAllResults();
-}
-
-function createTooltip() {
-    d3.select("body").append("div")
-        .attr("class", "d3-tooltip")
-        .style("opacity", 0);
 }
 
 async function loadAllResults() {
@@ -93,7 +97,10 @@ async function loadAllResults() {
         initUI();
         updateView();
     } catch (e) {
-        d3.select("#app").html(`<div class="text-red-600 p-4 border border-red-300 rounded bg-red-50">Error loading data: ${e.message}</div>`);
+        const app = document.getElementById('app');
+        if (app) {
+            app.innerHTML = `<div class="text-red-600 p-4 border border-red-300 rounded bg-red-50">Error loading data: ${e.message}</div>`;
+        }
     }
 }
 
@@ -208,59 +215,94 @@ function getTotalRuntimeData() {
 // --- UI Rendering ---
 
 function initUI() {
-    const controls = d3.select("#controls-area");
+    const controls = document.getElementById('controls-area');
+    if (!controls) return;
 
     // Architecture
-    const archContainer = controls.append("div").attr("class", "bg-white border rounded-lg p-4");
-    archContainer.append("h3").attr("class", "font-semibold mb-2").text("Architecture");
-    archContainer.append("div").attr("id", "arch-buttons").attr("class", "flex gap-2 flex-wrap");
+    const archContainer = document.createElement('div');
+    archContainer.className = 'bg-white border rounded-lg p-4';
+    archContainer.innerHTML = '<h3 class="font-semibold mb-2">Architecture</h3><div id="arch-buttons" class="flex gap-2 flex-wrap"></div>';
+    controls.appendChild(archContainer);
 
     // Algorithms
-    const algoContainer = controls.append("div").attr("class", "bg-white border rounded-lg p-4");
-    algoContainer.append("h3").attr("class", "font-semibold mb-2").text("Algorithms");
-    algoContainer.append("div").attr("id", "algo-buttons").attr("class", "flex gap-2 flex-wrap");
+    const algoContainer = document.createElement('div');
+    algoContainer.className = 'bg-white border rounded-lg p-4';
+    algoContainer.innerHTML = '<h3 class="font-semibold mb-2">Algorithms</h3><div id="algo-buttons" class="flex gap-2 flex-wrap"></div>';
+    controls.appendChild(algoContainer);
 
     // Comparison Mode
-    const modeContainer = controls.append("div").attr("class", "bg-white border rounded-lg p-4");
-    modeContainer.append("h3").attr("class", "font-semibold mb-2").text("Comparison Mode");
-    const modeDiv = modeContainer.append("div").attr("class", "flex gap-4 pt-2");
-    
+    const modeContainer = document.createElement('div');
+    modeContainer.className = 'bg-white border rounded-lg p-4';
+    modeContainer.innerHTML = '<h3 class="font-semibold mb-2">Comparison Mode</h3><div id="mode-buttons" class="flex gap-4 pt-2"></div>';
+    controls.appendChild(modeContainer);
+
     ['fastest', 'slowest'].forEach(mode => {
-        const label = modeDiv.append("label").attr("class", "inline-flex items-center cursor-pointer");
-        label.append("input")
-            .attr("type", "radio")
-            .attr("name", "compMode")
-            .attr("value", mode)
-            .attr("class", "form-radio text-blue-600")
-            .property("checked", state.comparisonMode === mode)
-            .on("change", (e) => { state.comparisonMode = e.target.value; updateView(); });
-        label.append("span").attr("class", "ml-2 capitalize text-sm").text(`Ref: ${mode}`);
+        const label = document.createElement('label');
+        label.className = 'inline-flex items-center cursor-pointer';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'compMode';
+        input.value = mode;
+        input.className = 'form-radio text-blue-600';
+        input.checked = state.comparisonMode === mode;
+        input.addEventListener('change', (e) => {
+            state.comparisonMode = e.target.value;
+            updateView();
+        });
+        const span = document.createElement('span');
+        span.className = 'ml-2 capitalize text-sm';
+        span.textContent = `Ref: ${mode}`;
+        label.appendChild(input);
+        label.appendChild(span);
+        document.getElementById('mode-buttons').appendChild(label);
     });
 
     // Versions
-    const versionContainer = controls.append("div").attr("class", "bg-white border rounded-lg p-4");
-    versionContainer.append("h3").attr("class", "font-semibold mb-2").text("Active Versions");
-    versionContainer.append("div").attr("id", "version-selects").attr("class", "space-y-2");
+    const versionContainer = document.createElement('div');
+    versionContainer.className = 'bg-white border rounded-lg p-4';
+    versionContainer.innerHTML = '<h3 class="font-semibold mb-2">Active Versions</h3><div id="version-selects" class="space-y-2"></div>';
+    controls.appendChild(versionContainer);
 
     // Table Filters
-    const tableFilters = d3.select("#table-filters");
-    const sortWrapper = tableFilters.append("div");
-    sortWrapper.append("label").attr("class", "block text-xs font-bold text-gray-500 mb-1").text("SORT BY");
-    sortWrapper.append("select")
-        .attr("class", "border rounded px-2 py-1 bg-white text-sm")
-        .on("change", (e) => { state.sortBy = e.target.value; state.currentPage = 0; renderTable(); })
-        .selectAll("option")
-        .data([{v: 'absolute', t: 'Absolute Diff (ms)'}, {v: 'percent', t: 'Percent Diff (%)'}])
-        .enter().append("option").attr("value", d => d.v).text(d => d.t);
+    const tableFilters = document.getElementById('table-filters');
+    if (tableFilters) {
+        const sortWrapper = document.createElement('div');
+        sortWrapper.innerHTML = '<label class="block text-xs font-bold text-gray-500 mb-1">SORT BY</label>';
+        const sortSelect = document.createElement('select');
+        sortSelect.className = 'border rounded px-2 py-1 bg-white text-sm';
+        sortSelect.addEventListener('change', (e) => {
+            state.sortBy = e.target.value;
+            state.currentPage = 0;
+            renderTable();
+        });
+        ['absolute', 'percent'].forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v === 'absolute' ? 'Absolute Diff (ms)' : 'Percent Diff (%)';
+            sortSelect.appendChild(opt);
+        });
+        sortWrapper.appendChild(sortSelect);
+        tableFilters.appendChild(sortWrapper);
 
-    const pageWrapper = tableFilters.append("div");
-    pageWrapper.append("label").attr("class", "block text-xs font-bold text-gray-500 mb-1").text("SHOW");
-    pageWrapper.append("select")
-        .attr("class", "border rounded px-2 py-1 bg-white text-sm")
-        .on("change", (e) => { state.showTop = +e.target.value; state.currentPage = 0; renderTable(); })
-        .selectAll("option")
-        .data([5, 10, 20, 50])
-        .enter().append("option").attr("value", d => d).text(d => d);
+        const pageWrapper = document.createElement('div');
+        pageWrapper.innerHTML = '<label class="block text-xs font-bold text-gray-500 mb-1">SHOW</label>';
+        const pageSelect = document.createElement('select');
+        pageSelect.className = 'border rounded px-2 py-1 bg-white text-sm';
+        pageSelect.addEventListener('change', (e) => {
+            state.showTop = +e.target.value;
+            state.currentPage = 0;
+            renderTable();
+        });
+        [5, 10, 20, 50].forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            if (v === 10) opt.selected = true;
+            pageSelect.appendChild(opt);
+        });
+        pageWrapper.appendChild(pageSelect);
+        tableFilters.appendChild(pageWrapper);
+    }
 }
 
 function updateView() {
@@ -276,100 +318,119 @@ function renderControls() {
     const execs = [...new Set(state.allResults.map(r => r.executable))];
 
     // Architecture Buttons
-    d3.select("#arch-buttons").selectAll("button")
-        .data(archs)
-        .join("button")
-        .attr("class", d => `px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${state.selectedArchitecture === d ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`)
-        .text(d => d)
-        .on("click", (e, d) => {
-            if (state.selectedArchitecture === d) return; // Do nothing if it's the same arch
-            state.selectedArchitecture = d;
-            
-            // Reset and re-select executables for the new architecture
-            const newSelectedExecutables = {};
-            state.visibleExecutables.forEach(exec => {
-                const key = `${exec}_${d}`;
-                if (state.byExecAndArch[key] && state.byExecAndArch[key].length > 0) {
-                    newSelectedExecutables[exec] = state.byExecAndArch[key][0]; // Select the latest one
-                }
+    const archButtons = document.getElementById('arch-buttons');
+    if (archButtons) {
+        archButtons.innerHTML = '';
+        archs.forEach(arch => {
+            const btn = document.createElement('button');
+            btn.className = `px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${state.selectedArchitecture === arch ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`;
+            btn.textContent = arch;
+            btn.addEventListener('click', () => {
+                if (state.selectedArchitecture === arch) return;
+                state.selectedArchitecture = arch;
+                
+                const newSelectedExecutables = {};
+                state.visibleExecutables.forEach(exec => {
+                    const key = `${exec}_${arch}`;
+                    if (state.byExecAndArch[key] && state.byExecAndArch[key].length > 0) {
+                        newSelectedExecutables[exec] = state.byExecAndArch[key][0];
+                    }
+                });
+                state.selectedExecutables = newSelectedExecutables;
+                updateView();
             });
-            state.selectedExecutables = newSelectedExecutables;
-
-            updateView();
+            archButtons.appendChild(btn);
         });
+    }
 
     // Algorithm Buttons
-    d3.select("#algo-buttons").selectAll("button")
-        .data(execs)
-        .join("button")
-        .attr("class", d => `px-4 py-1.5 text-sm font-medium rounded-full transition-colors border ${state.visibleExecutables.includes(d) ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm' : 'bg-white border-gray-300 hover:bg-gray-50 text-gray-700'}`)
-        .text(d => d)
-        .on("click", (e, d) => {
-            if (state.visibleExecutables.includes(d)) {
-                state.visibleExecutables = state.visibleExecutables.filter(x => x !== d);
-                delete state.selectedExecutables[d];
-            } else {
-                state.visibleExecutables.push(d);
-                const res = state.byExecAndArch[`${d}_${state.selectedArchitecture}`];
-                if(res && res.length) state.selectedExecutables[d] = res[0];
-            }
-            updateView();
+    const algoButtons = document.getElementById('algo-buttons');
+    if (algoButtons) {
+        algoButtons.innerHTML = '';
+        execs.forEach(exec => {
+            const btn = document.createElement('button');
+            const isVisible = state.visibleExecutables.includes(exec);
+            btn.className = `px-4 py-1.5 text-sm font-medium rounded-full transition-colors border ${isVisible ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm' : 'bg-white border-gray-300 hover:bg-gray-50 text-gray-700'}`;
+            btn.textContent = exec;
+            btn.addEventListener('click', () => {
+                if (isVisible) {
+                    state.visibleExecutables = state.visibleExecutables.filter(x => x !== exec);
+                    delete state.selectedExecutables[exec];
+                } else {
+                    state.visibleExecutables.push(exec);
+                    const res = state.byExecAndArch[`${exec}_${state.selectedArchitecture}`];
+                    if(res && res.length) state.selectedExecutables[exec] = res[0];
+                }
+                updateView();
+            });
+            algoButtons.appendChild(btn);
         });
+    }
 
     // Version Selects
-    const versionContainer = d3.select("#version-selects");
-    const versionDivs = versionContainer.selectAll(".version-row")
-        .data(state.visibleExecutables, d => d);
-
-    versionDivs.exit().remove();
-
-    const versionEnter = versionDivs.enter().append("div")
-        .attr("class", "version-row border rounded-lg p-2 text-sm bg-gray-50");
-    
-    versionEnter.append("div").attr("class", "font-bold mb-1 exec-name");
-    versionEnter.append("select").attr("class", "w-full border rounded px-2 py-1 bg-white exec-select")
-        .on("change", (e, d) => {
-            const file = e.target.value;
-            const res = state.allResults.find(r => r.filename === file);
-            if(res) { state.selectedExecutables[d] = res; updateView(); }
+    const versionContainer = document.getElementById('version-selects');
+    if (versionContainer) {
+        versionContainer.innerHTML = '';
+        state.visibleExecutables.forEach(exec => {
+            const row = document.createElement('div');
+            row.className = 'version-row border rounded-lg p-2 text-sm bg-gray-50';
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'font-bold mb-1 exec-name';
+            nameDiv.textContent = exec;
+            nameDiv.style.color = getColor(state.visibleExecutables.indexOf(exec), COLOR_PALETTE);
+            row.appendChild(nameDiv);
+            
+            const select = document.createElement('select');
+            select.className = 'w-full border rounded px-2 py-1 bg-white exec-select';
+            const results = state.byExecAndArch[`${exec}_${state.selectedArchitecture}`] || [];
+            const currentSel = state.selectedExecutables[exec];
+            
+            results.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.filename;
+                opt.textContent = `${r.timestamp.split('_')[0]} (${(r.statistics?.total_runtime?.average/1000).toFixed(2)}s)`;
+                if (currentSel && r.filename === currentSel.filename) opt.selected = true;
+                select.appendChild(opt);
+            });
+            
+            select.addEventListener('change', (e) => {
+                const file = e.target.value;
+                const res = state.allResults.find(r => r.filename === file);
+                if(res) {
+                    state.selectedExecutables[exec] = res;
+                    updateView();
+                }
+            });
+            
+            row.appendChild(select);
+            versionContainer.appendChild(row);
         });
+    }
 
-    versionContainer.selectAll(".version-row").each(function(exec) {
-        const row = d3.select(this);
-        row.select(".exec-name").text(exec).style("color", state.colorScale(exec));
+    // Pie select
+    const pieSelect = document.getElementById('pie-exec-select');
+    if (pieSelect) {
+        pieSelect.innerHTML = '';
+        const execNames = Object.keys(state.selectedExecutables);
+        if (execNames.length > 0 && !state.pieTargetExec) state.pieTargetExec = execNames[0];
         
-        const results = state.byExecAndArch[`${exec}_${state.selectedArchitecture}`] || [];
-        const currentSel = state.selectedExecutables[exec];
-
-        const options = row.select("select").selectAll("option").data(results, r => r.filename);
-        options.enter().append("option").merge(options)
-            .attr("value", r => r.filename)
-            .property("selected", r => currentSel && r.filename === currentSel.filename)
-            .text(r => `${r.timestamp.split('_')[0]} (${(r.statistics?.total_runtime?.average/1000).toFixed(2)}s)`);
-        options.exit().remove();
-    });
-
-    // Ensure the pie-select in the HTML is populated and wired
-    const pieSelect = d3.select("#pie-exec-select");
-    pieSelect.html(""); // clear any previous options
-
-    const execNames = Object.keys(state.selectedExecutables);
-    if (execNames.length > 0 && !state.pieTargetExec) state.pieTargetExec = execNames[0];
-
-    pieSelect.selectAll("option")
-        .data(execNames)
-        .enter().append("option")
-        .attr("value", d => d)
-        .property("selected", d => d === state.pieTargetExec)
-        .text(d => d);
-
-    pieSelect.on("change", (e) => {
-        state.pieTargetExec = e.target.value;
-        renderPieChart();
-    });
+        execNames.forEach(exec => {
+            const opt = document.createElement('option');
+            opt.value = exec;
+            opt.textContent = exec;
+            if (exec === state.pieTargetExec) opt.selected = true;
+            pieSelect.appendChild(opt);
+        });
+        
+        pieSelect.addEventListener('change', (e) => {
+            state.pieTargetExec = e.target.value;
+            renderPieChart();
+        });
+    }
 }
 
-// --- D3 Charts ---
+// --- Chart.js Charts ---
 
 // Window Resize Listener for Responsive Charts
 window.addEventListener('resize', () => {
@@ -382,190 +443,191 @@ window.addEventListener('resize', () => {
 });
 
 function renderTotalRuntimeChart() {
-    const container = d3.select("#chart-total-runtime");
-    container.html("");
+    const container = document.getElementById('chart-total-runtime');
+    if (!container) return;
+    
     const data = getTotalRuntimeData();
-    if(data.length === 0) { container.html("<p class='text-gray-400 p-4'>No data selected</p>"); return; }
-
-    const containerWidth = container.node().getBoundingClientRect().width;
-    const isMobile = containerWidth < 500;
-
-    const margin = isMobile 
-        ? {top: 20, right: 20, bottom: 20, left: 10}  
-        : {top: 20, right: 50, bottom: 30, left: 120}; 
-
-    const width = containerWidth - margin.left - margin.right;
-    const height = 350 - margin.top - margin.bottom;
-
-    const svg = container.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const x = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.value) * (isMobile ? 1.3 : 1.15)])
-        .range([0, width]);
-
-    const y = d3.scaleBand()
-        .range([0, height])
-        .domain(data.map(d => d.executable))
-        .padding(isMobile ? 0.4 : 0.3);
-
-    // Bars
-    svg.selectAll("rect")
-        .data(data)
-        .join("rect")
-        .attr("x", x(0))
-        .attr("y", d => y(d.executable))
-        .attr("height", y.bandwidth())
-        .attr("fill", d => d.isRef ? "#22c55e" : state.colorScale(d.executable))
-        .attr("rx", 4)
-        .attr("width", 0)
-        .transition().duration(750)
-        .attr("width", d => x(d.value));
-
-    // Labels logic
-    if (isMobile) {
-        // Mobile: Labels ABOVE bars
-        svg.selectAll(".label-name")
-            .data(data)
-            .join("text")
-            .attr("class", "text-xs font-bold fill-current text-gray-700 dark:text-gray-500")
-            .attr("x", x(0))
-            .attr("y", d => y(d.executable) - 5)
-            .text(d => d.executable);
-        
-        svg.selectAll(".label-val")
-            .data(data)
-            .join("text")
-            .attr("class", "text-xs font-medium fill-current text-gray-600 dark:text-gray-300")
-            .attr("x", d => x(d.value) + 5)
-            .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => {
-                if (d.isRef) return `${d.value.toFixed(2)}s`;
-                const sign = d.pDiff > 0 ? '+' : '';
-                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
-            });
-
-    } else {
-        // Desktop: Labels on Left
-        svg.append("g")
-            .call(d3.axisLeft(y).tickSize(0))
-            .style("font-size", "13px")
-            .select(".domain").remove();
-
-        svg.selectAll(".label-val")
-            .data(data)
-            .join("text")
-            .attr("class", "label-val text-xs font-medium fill-current text-gray-700 dark:text-gray-500")
-            .attr("x", d => x(d.value) + 8)
-            .attr("y", d => y(d.executable) + y.bandwidth() / 2 + 4)
-            .text(d => {
-                if (d.isRef) return `${d.value.toFixed(2)}s`;
-                const sign = d.pDiff > 0 ? '+' : '';
-                return `${d.value.toFixed(2)}s (${sign}${d.pDiff.toFixed(0)}%)`;
-            });
+    if(data.length === 0) {
+        container.innerHTML = "<p class='text-gray-400 p-4'>No data selected</p>";
+        if (state.charts.totalRuntime) {
+            state.charts.totalRuntime.destroy();
+            state.charts.totalRuntime = null;
+        }
+        return;
     }
 
-    svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(isMobile ? 3 : 5)).style("color", "#9ca3af").select(".domain").remove();
-    
-    // Grid lines
-    svg.append("g").attr("class", "grid-lines").call(d3.axisBottom(x).ticks(isMobile ? 3 : 5).tickSize(height).tickFormat("")).style("color", "#e5e7eb").style("opacity", 0.5).select(".domain").remove();
+    const ctx = container.getContext ? container.getContext('2d') : null;
+    if (!ctx) {
+        const canvas = document.createElement('canvas');
+        container.innerHTML = '';
+        container.appendChild(canvas);
+        const newCtx = canvas.getContext('2d');
+        if (state.charts.totalRuntime) state.charts.totalRuntime.destroy();
+        
+        state.charts.totalRuntime = new Chart(newCtx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.executable),
+                datasets: [{
+                    label: 'Total Runtime (s)',
+                    data: data.map(d => d.value),
+                    backgroundColor: data.map(d => d.isRef ? '#22c55e' : getColor(state.visibleExecutables.indexOf(d.executable), COLOR_PALETTE)),
+                    borderColor: data.map(d => d.isRef ? '#16a34a' : getColor(state.visibleExecutables.indexOf(d.executable), COLOR_PALETTE)),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const d = data[context.dataIndex];
+                                return [
+                                    `Time: ${d.value.toFixed(4)}s`,
+                                    d.isRef ? 'Reference' : `Diff: ${d.diff > 0 ? '+' : ''}${d.pDiff.toFixed(2)}%`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af', font: { size: 12 } },
+                        grid: { color: '#e5e7eb', opacity: 0.5 }
+                    },
+                    y: {
+                        ticks: { color: '#9ca3af', font: { size: 13 } },
+                        grid: { display: false }
+                    }
+                },
+                animation: {
+                    duration: 750
+                }
+            }
+        });
+        return;
+    }
 
-    const tooltip = d3.select(".d3-tooltip");
-    svg.selectAll("rect")
-        .on("mouseover", (e, d) => {
-            tooltip.transition().duration(200).style("opacity", .9);
-            tooltip.html(`<strong>${d.executable}</strong><br/>Time: ${d.value.toFixed(4)}s<br/>${d.isRef ? '<span class="text-green-400">Reference</span>' : `Diff: ${d.diff > 0 ? '+' : ''}${d.pDiff.toFixed(2)}%`}`)
-                .style("left", (e.pageX + 10) + "px")
-                .style("top", (e.pageY - 28) + "px");
-        })
-        .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0));
+    if (state.charts.totalRuntime) {
+        state.charts.totalRuntime.data.labels = data.map(d => d.executable);
+        state.charts.totalRuntime.data.datasets[0].data = data.map(d => d.value);
+        state.charts.totalRuntime.data.datasets[0].backgroundColor = data.map(d => d.isRef ? '#22c55e' : getColor(state.visibleExecutables.indexOf(d.executable), COLOR_PALETTE));
+        state.charts.totalRuntime.data.datasets[0].borderColor = data.map(d => d.isRef ? '#16a34a' : getColor(state.visibleExecutables.indexOf(d.executable), COLOR_PALETTE));
+        state.charts.totalRuntime.update();
+    }
 }
 
 function renderQueryChart() {
-    const container = d3.select("#chart-query-perf");
-    container.html("");
-    const analysis = getComparisonData().slice(0, 5);
-    if(analysis.length === 0) { container.html("<p class='text-gray-400 p-4'>No data selected</p>"); return; }
-
-    const containerWidth = container.node().getBoundingClientRect().width;
-    const isMobile = containerWidth < 500;
-
-    const margin = isMobile
-        ? {top: 20, right: 10, bottom: 50, left: 35} 
-        : {top: 20, right: 20, bottom: 60, left: 60};
-
-    const width = containerWidth - margin.left - margin.right;
-    const height = 350 - margin.top - margin.bottom;
-
-    const svg = container.append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const subgroups = state.visibleExecutables;
-    const groups = analysis.map(d => d.query);
-
-    const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.25);
-    const xSub = d3.scaleBand().domain(subgroups).range([0, x.bandwidth()]).padding(isMobile ? 0.05 : 0.1);
+    const container = document.getElementById('chart-query-perf');
+    if (!container) return;
     
-    const maxY = d3.max(analysis, d => d3.max(subgroups, sub => d.comparisons[sub]?.value || 0));
-    const y = d3.scaleLinear().domain([0, maxY]).range([height, 0]);
+    const analysis = getComparisonData().slice(0, 5);
+    if(analysis.length === 0) {
+        container.innerHTML = "<p class='text-gray-400 p-4'>No data selected</p>";
+        if (state.charts.queryPerf) {
+            state.charts.queryPerf.destroy();
+            state.charts.queryPerf = null;
+        }
+        return;
+    }
 
-    svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-35)")
-        .style("font-size", isMobile ? "10px" : "12px");
+    const ctx = container.getContext ? container.getContext('2d') : null;
+    if (!ctx) {
+        const canvas = document.createElement('canvas');
+        container.innerHTML = '';
+        container.appendChild(canvas);
+        const newCtx = canvas.getContext('2d');
+        if (state.charts.queryPerf) state.charts.queryPerf.destroy();
+        
+        const subgroups = state.visibleExecutables;
+        const groups = analysis.map(d => d.query);
+        
+        const datasets = subgroups.map((exec, idx) => ({
+            label: exec,
+            data: analysis.map(d => d.comparisons[exec]?.value || 0),
+            backgroundColor: analysis.map(d => d.comparisons[exec]?.isRef ? '#22c55e' : getColor(idx, COLOR_PALETTE)),
+            borderColor: analysis.map(d => d.comparisons[exec]?.isRef ? '#16a34a' : getColor(idx, COLOR_PALETTE)),
+            borderWidth: 1
+        }));
+        
+        state.charts.queryPerf = new Chart(newCtx, {
+            type: 'bar',
+            data: {
+                labels: groups,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: subgroups.length > 1 },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ms`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#9ca3af', 
+                            font: { size: 12 },
+                            maxRotation: 35,
+                            minRotation: 35
+                        },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af', font: { size: 12 } },
+                        grid: { color: '#f3f4f6' }
+                    }
+                },
+                animation: {
+                    duration: 750
+                }
+            }
+        });
+        return;
+    }
 
-    svg.append("g").call(d3.axisLeft(y).ticks(5)).style("color", "#9ca3af").style("font-size", isMobile ? "10px" : "12px").select(".domain").remove();
-    svg.append("g").attr("class", "grid-lines").call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat("")).style("color", "#f3f4f6").select(".domain").remove();
-
-    svg.append("g")
-        .selectAll("g")
-        .data(analysis)
-        .join("g")
-        .attr("transform", d => `translate(${x(d.query)},0)`)
-        .selectAll("rect")
-        .data(d => subgroups.map(key => ({key: key, value: d.comparisons[key]?.value, isRef: d.comparisons[key]?.isRef})))
-        .join("rect")
-        .attr("x", d => xSub(d.key))
-        .attr("y", height)
-        .attr("width", xSub.bandwidth())
-        .attr("height", 0)
-        .attr("fill", d => d.isRef ? "#22c55e" : state.colorScale(d.key))
-        .attr("rx", isMobile ? 1 : 2)
-        .transition().duration(750)
-        .attr("y", d => y(d.value || 0))
-        .attr("height", d => height - y(d.value || 0));
-
-    const tooltip = d3.select(".d3-tooltip");
-    svg.selectAll("rect")
-        .on("mouseover", (e, d) => {
-            if(!d.value) return;
-            tooltip.transition().duration(200).style("opacity", .9);
-            tooltip.html(`<strong>${d.key}</strong><br/>${d.value.toFixed(2)} ms`)
-                .style("left", (e.pageX + 10) + "px")
-                .style("top", (e.pageY - 28) + "px");
-        })
-        .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0));
+    if (state.charts.queryPerf) {
+        const subgroups = state.visibleExecutables;
+        const groups = analysis.map(d => d.query);
+        
+        state.charts.queryPerf.data.labels = groups;
+        state.charts.queryPerf.data.datasets = subgroups.map((exec, idx) => ({
+            label: exec,
+            data: analysis.map(d => d.comparisons[exec]?.value || 0),
+            backgroundColor: analysis.map(d => d.comparisons[exec]?.isRef ? '#22c55e' : getColor(idx, COLOR_PALETTE)),
+            borderColor: analysis.map(d => d.comparisons[exec]?.isRef ? '#16a34a' : getColor(idx, COLOR_PALETTE)),
+            borderWidth: 1
+        }));
+        state.charts.queryPerf.update();
+    }
 }
 
 function renderPieChart() {
-    const container = d3.select("#chart-pie-breakdown");
-    const select = d3.select("#pie-exec-select");
+    const container = document.getElementById('chart-pie-breakdown');
+    const select = document.getElementById('pie-exec-select');
+    
+    if (!container) return;
     
     const activeExecs = state.visibleExecutables;
     if (activeExecs.length === 0) {
-        container.html("<div class='text-gray-400 flex h-full items-center justify-center'>No executable selected</div>");
-        select.html("");
+        container.innerHTML = "<div class='text-gray-400 flex h-full items-center justify-center'>No executable selected</div>";
+        if (select) select.innerHTML = '';
+        if (state.charts.pie) {
+            state.charts.pie.destroy();
+            state.charts.pie = null;
+        }
         return;
     }
 
@@ -573,21 +635,13 @@ function renderPieChart() {
         state.pieTargetExec = activeExecs[0];
     }
 
-    const options = select.selectAll("option").data(activeExecs);
-    options.enter().append("option").merge(options)
-        .text(d => d)
-        .attr("value", d => d)
-        .property("selected", d => d === state.pieTargetExec);
-    options.exit().remove();
-
-    select.on("change", function() {
-        state.pieTargetExec = this.value;
-        renderPieChart();
-    });
-
     const result = state.selectedExecutables[state.pieTargetExec];
     if (!result || !result.statistics || !result.statistics.per_query) {
-        container.html("<p class='text-gray-400'>No query data available</p>");
+        container.innerHTML = "<p class='text-gray-400'>No query data available</p>";
+        if (state.charts.pie) {
+            state.charts.pie.destroy();
+            state.charts.pie = null;
+        }
         return;
     }
 
@@ -596,91 +650,83 @@ function renderPieChart() {
         .filter(d => d.value > 0)
         .sort((a, b) => b.value - a.value);
 
-    container.html("");
-
-    const width = 600;
-    const height = 500;
-    const margin = 40;
-    const radius = Math.min(width, height) / 2 - margin;
-
-    const svg = container.append("svg")
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .attr("viewBox", `0 0 ${width} ${height}`)
-        .append("g")
-        .attr("transform", `translate(${width / 2},${height / 2})`);
-
-    const pie = d3.pie().value(d => d.value).sort(null);
-    const arc = d3.arc().innerRadius(radius * 0.55).outerRadius(radius * 0.85);
-    const arcHover = d3.arc().innerRadius(radius * 0.55).outerRadius(radius * 0.9);
-
-    const paths = svg.selectAll("path")
-        .data(pie(data))
-        .join("path")
-        .attr("d", arc)
-        .attr("fill", d => state.queryColorScale(d.data.label))
-        .attr("stroke", "white")
-        .style("stroke-width", "2px")
-        .style("cursor", "pointer")
-        .each(function(d) { this._current = d; }); 
-
-    paths.transition().duration(1000)
-        .attrTween("d", function(d) {
-            const i = d3.interpolate({startAngle: 0, endAngle: 0}, d);
-            return function(t) { return arc(i(t)); };
-        });
-
-    // Center Text
-    const totalTime = d3.sum(data, d => d.value);
-    const centerGroup = svg.append("text")
-        .attr("text-anchor", "middle")
-        .attr("class", "fill-current text-gray-700 dark:text-gray-500");
-
-    centerGroup.append("tspan")
-        .attr("dy", "-0.2em")
-        .attr("x", 0)
-        .attr("class", "text-lg font-semibold uppercase tracking-widest opacity-60")
-        .text("Total");
+    const ctx = container.getContext ? container.getContext('2d') : null;
+    if (!ctx) {
+        const canvas = document.createElement('canvas');
+        container.innerHTML = '';
+        container.appendChild(canvas);
+        const newCtx = canvas.getContext('2d');
+        if (state.charts.pie) state.charts.pie.destroy();
         
-    centerGroup.append("tspan")
-        .attr("dy", "1.2em")
-        .attr("x", 0)
-        .attr("class", "text-3xl font-bold font-mono")
-        .text(`${(totalTime / 1000).toFixed(2)}s`);
-
-    // Tooltip
-    const tooltip = d3.select(".d3-tooltip");
-    paths.on("mouseover", function(e, d) {
-            d3.select(this).transition().duration(200).attr("d", arcHover).style("filter", "drop-shadow(0px 3px 3px rgba(0,0,0,0.2))");
-            const percent = ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1);
-            
-            tooltip.style("opacity", 0.95);
-            tooltip.html(`
-                <div class="font-bold mb-1 text-sm border-b border-gray-600 pb-1">${d.data.label}</div>
-                <div class="flex justify-between gap-4 text-xs"><span>Time:</span> <span class="font-mono">${d.data.value.toFixed(2)} ms</span></div>
-                <div class="flex justify-between gap-4 text-xs"><span>Share:</span> <span class="font-mono text-blue-300">${percent}%</span></div>
-            `)
-            .style("left", (e.pageX + 15) + "px")
-            .style("top", (e.pageY - 28) + "px");
-        })
-        .on("mouseout", function(e, d) {
-            d3.select(this).transition().duration(200).attr("d", arc).style("filter", "none");
-            tooltip.style("opacity", 0);
+        const totalTime = data.reduce((sum, d) => sum + d.value, 0);
+        
+        state.charts.pie = new Chart(newCtx, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.label),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: data.map((d, idx) => getColor(idx, QUERY_COLOR_PALETTE)),
+                    borderColor: 'white',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '55%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label;
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percent = ((value / total) * 100).toFixed(1);
+                                return [
+                                    `${label}`,
+                                    `Time: ${value.toFixed(2)} ms`,
+                                    `Share: ${percent}%`
+                                ];
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    duration: 1000
+                }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const ctx = chart.ctx;
+                    const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                    const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                    
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillStyle = '#6b7280';
+                    ctx.fillText('Total', centerX, centerY - 10);
+                    ctx.font = 'bold 24px monospace';
+                    ctx.fillText(`${(total / 1000).toFixed(2)}s`, centerX, centerY + 10);
+                    ctx.restore();
+                }
+            }]
         });
+        return;
+    }
 
-    // Labels on Pie
-    svg.selectAll("text.slice-label")
-        .data(pie(data))
-        .join("text")
-        .attr("transform", d => `translate(${arc.centroid(d)})`)
-        .attr("dy", "0.35em")
-        .attr("text-anchor", "middle")
-        .text(d => (d.endAngle - d.startAngle > 0.25) ? (d.data.label.length > 10 ? d.data.label.slice(0,8)+".." : d.data.label) : "")
-        .style("font-size", "10px")
-        .style("fill", "white")
-        .style("font-weight", "bold")
-        .style("pointer-events", "none")
-        .style("text-shadow", "0px 1px 2px rgba(0,0,0,0.5)");
+    if (state.charts.pie) {
+        state.charts.pie.data.labels = data.map(d => d.label);
+        state.charts.pie.data.datasets[0].data = data.map(d => d.value);
+        state.charts.pie.data.datasets[0].backgroundColor = data.map((d, idx) => getColor(idx, QUERY_COLOR_PALETTE));
+        state.charts.pie.update();
+    }
 }
 
 // --- Table Rendering ---
@@ -694,77 +740,98 @@ function renderTable() {
     const paginatedData = fullData.slice(state.currentPage * state.showTop, (state.currentPage + 1) * state.showTop);
     const execs = state.visibleExecutables;
 
-    const thead = d3.select("#analysis-table thead");
-    thead.html("");
-    const headerRow = thead.append("tr");
+    const thead = document.querySelector('#analysis-table thead');
+    const tbody = document.querySelector('#analysis-table tbody');
+    if (!thead || !tbody) return;
+
+    thead.innerHTML = '';
+    const headerRow = document.createElement('tr');
     
-    headerRow.append("th").attr("class", "px-4 py-3 bg-gray-100 border-b").text("Query");
+    const th1 = document.createElement('th');
+    th1.className = 'px-4 py-3 bg-gray-100 border-b';
+    th1.textContent = 'Query';
+    headerRow.appendChild(th1);
     
     execs.forEach(exec => {
-        headerRow.append("th")
-            .attr("class", "px-4 py-3 bg-gray-50 border-l border-gray-200 border-b text-right")
-            .style("color", state.colorScale(exec))
-            .html(`${exec}<br><span class="text-[10px] text-gray-400 font-normal">Time (ms)</span>`);
+        const th2 = document.createElement('th');
+        th2.className = 'px-4 py-3 bg-gray-50 border-l border-gray-200 border-b text-right';
+        th2.style.color = getColor(state.visibleExecutables.indexOf(exec), COLOR_PALETTE);
+        th2.innerHTML = `${exec}<br><span class="text-[10px] text-gray-400 font-normal">Time (ms)</span>`;
+        headerRow.appendChild(th2);
         
-        headerRow.append("th")
-            .attr("class", "px-4 py-3 bg-gray-50 border-b text-right w-24")
-            .html(`<span class="text-[10px] text-gray-400 font-normal">vs Ref</span>`);
+        const th3 = document.createElement('th');
+        th3.className = 'px-4 py-3 bg-gray-50 border-b text-right w-24';
+        th3.innerHTML = `<span class="text-[10px] text-gray-400 font-normal">vs Ref</span>`;
+        headerRow.appendChild(th3);
     });
+    
+    thead.appendChild(headerRow);
 
-    const tbody = d3.select("#analysis-table tbody");
-    const rows = tbody.selectAll("tr").data(paginatedData, d => d.query);
-    rows.exit().remove();
-
-    const rowsEnter = rows.enter().append("tr").attr("class", "hover:bg-gray-50 transition-colors group");
-    const allRows = rowsEnter.merge(rows);
-    allRows.html("");
-
-    allRows.append("td")
-        .attr("class", "px-4 py-3 font-mono text-gray-700 font-medium border-b border-gray-100")
-        .text(d => d.query);
-
-    allRows.each(function(d) {
-        const row = d3.select(this);
+    tbody.innerHTML = '';
+    paginatedData.forEach(d => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 transition-colors group';
+        
+        const td1 = document.createElement('td');
+        td1.className = 'px-4 py-3 font-mono text-gray-700 font-medium border-b border-gray-100';
+        td1.textContent = d.query;
+        row.appendChild(td1);
+        
         execs.forEach(exec => {
             const comp = d.comparisons[exec];
             
-            row.append("td")
-                .attr("class", `px-4 py-3 text-right border-l border-gray-100 border-b ${comp.isRef ? 'font-bold text-green-600' : 'text-gray-700'}`)
-                .text(comp.value !== null ? comp.value.toFixed(1) : '-');
+            const td2 = document.createElement('td');
+            td2.className = `px-4 py-3 text-right border-l border-gray-100 border-b ${comp.isRef ? 'font-bold text-green-600' : 'text-gray-700'}`;
+            td2.textContent = comp.value !== null ? comp.value.toFixed(1) : '-';
+            row.appendChild(td2);
 
-            const diffCell = row.append("td")
-                .attr("class", "px-4 py-3 text-right border-b border-gray-100 text-xs");
+            const td3 = document.createElement('td');
+            td3.className = 'px-4 py-3 text-right border-b border-gray-100 text-xs';
             
             if (comp.isRef) {
-                diffCell.html('<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[10px] font-bold">REF</span>');
+                td3.innerHTML = '<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[10px] font-bold">REF</span>';
             } else if (comp.diff !== null) {
                 const isBad = state.comparisonMode === 'fastest' ? comp.diff > 0 : comp.diff < 0;
-                const colorClass = isBad ? "text-red-600" : "text-green-600";
-                const sign = comp.diff > 0 ? "+" : "";
-                diffCell.attr("class", `px-4 py-3 text-right border-b border-gray-100 text-xs font-semibold ${colorClass}`)
-                    .html(`${sign}${comp.diff.toFixed(1)} <span class="opacity-75">(${sign}${comp.pDiff.toFixed(0)}%)</span>`);
+                const colorClass = isBad ? 'text-red-600' : 'text-green-600';
+                const sign = comp.diff > 0 ? '+' : '';
+                td3.className = `px-4 py-3 text-right border-b border-gray-100 text-xs font-semibold ${colorClass}`;
+                td3.innerHTML = `${sign}${comp.diff.toFixed(1)} <span class="opacity-75">(${sign}${comp.pDiff.toFixed(0)}%)</span>`;
             } else {
-                diffCell.text("-");
+                td3.textContent = '-';
             }
+            row.appendChild(td3);
         });
+        
+        tbody.appendChild(row);
     });
 
-    const pageControls = d3.select("#pagination-controls");
-    pageControls.html("");
-    
-    pageControls.append("button")
-        .attr("class", "px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors")
-        .property("disabled", state.currentPage === 0)
-        .text("Previous")
-        .on("click", () => { state.currentPage--; renderTable(); });
-
-    pageControls.append("span")
-        .attr("class", "text-xs text-gray-500 font-medium")
-        .text(`Page ${state.currentPage + 1} of ${totalPages || 1}`);
-
-    pageControls.append("button")
-        .attr("class", "px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors")
-        .property("disabled", state.currentPage >= totalPages - 1)
-        .text("Next")
-        .on("click", () => { state.currentPage++; renderTable(); });
+    const pageControls = document.getElementById('pagination-controls');
+    if (pageControls) {
+        pageControls.innerHTML = '';
+        
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors';
+        prevBtn.disabled = state.currentPage === 0;
+        prevBtn.textContent = 'Previous';
+        prevBtn.addEventListener('click', () => {
+            state.currentPage--;
+            renderTable();
+        });
+        pageControls.appendChild(prevBtn);
+        
+        const span = document.createElement('span');
+        span.className = 'text-xs text-gray-500 font-medium';
+        span.textContent = `Page ${state.currentPage + 1} of ${totalPages || 1}`;
+        pageControls.appendChild(span);
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'px-3 py-1.5 text-xs font-medium border rounded bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors';
+        nextBtn.disabled = state.currentPage >= totalPages - 1;
+        nextBtn.textContent = 'Next';
+        nextBtn.addEventListener('click', () => {
+            state.currentPage++;
+            renderTable();
+        });
+        pageControls.appendChild(nextBtn);
+    }
 }
