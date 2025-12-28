@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 3 - Performance Analysis</title>
+
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../assets/js/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
+    
+    <!-- Main Content Container -->
+    <div id="app" class="flex-grow p-6 w-full max-w-7xl mx-auto">
+        
+        <!-- Header Section -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-gray-900">Benchmark Performance Analysis - Part 3</h1>
+        </div>
+
+        <!-- Controls & Filters Section -->
+        <div id="controls-area" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8"></div>
+
+        <!-- Comparison Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Total Runtime Chart -->
+            <div class="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Total Runtime Comparison</h2>
+                <div id="chart-total-runtime" class="relative h-[350px] w-full"></div>
+            </div>
+            
+            <!-- Query Performance Chart -->
+            <div class="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Slowest Queries (Top 5)</h2>
+                <div id="chart-query-perf" class="relative h-[350px] w-full"></div>
+            </div>
+        </div>
+
+        <!-- Pie Chart Section -->
+        <div class="bg-white border rounded-xl p-6 shadow-sm mb-8 hover:shadow-md transition-shadow">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Query Time Distribution</h2>
+                    <p class="text-sm text-gray-500">Breakdown of execution time by query type</p>
+                </div>
+                <!-- Select for Pie Chart Target -->
+                <div class="mt-4 sm:mt-0 flex items-center gap-3">
+                    <label class="text-sm font-bold text-gray-600 uppercase tracking-wide">Executable:</label>
+                    <div class="relative">
+                        <select id="pie-exec-select" class="appearance-none bg-gray-50 border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-full leading-tight focus:outline-none focus:bg-white focus:border-blue-500 text-sm font-medium cursor-pointer transition-colors">
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Container for Pie Chart -->
+            <div id="chart-pie-breakdown" class="relative h-[500px] w-full flex justify-center items-center"></div>
+        </div>
+
+        <!-- Table Controls -->
+        <div class="flex flex-wrap justify-center sm:justify-between items-end gap-4 mb-4">
+            <div id="table-filters" class="flex gap-4"></div>
+            <div id="pagination-controls" class="flex items-center gap-2"></div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white border rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table id="analysis-table" class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold border-b"></thead>
+                    <tbody class="text-sm divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/layout.js"></script>
+    <script src="../assets/js/part3.js"></script>
+</body>
+</html>
