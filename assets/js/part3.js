@@ -1,5 +1,9 @@
 const RESULTS_PATH = '../benchmark_results/part3/'; 
-const BENCHMARK_FILES = [];
+const BENCHMARK_FILES = [
+    'results_parallel-build_arm64_2025-12-29_12-36-21.json',
+    'results_serial_arm64_2025-12-05_04-24-09.json',
+    'results_serial_x86_64_2025-11-30_16-27-40.json'
+];
 
 // Color palettes (replacing D3 color scales)
 const COLOR_PALETTE = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'];
