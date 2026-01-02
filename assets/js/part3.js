@@ -2,9 +2,9 @@ const RESULTS_PATH = '../benchmark_results/part3/';
 const BENCHMARK_FILES = [
     'results_base_arm64_2025-11-22_23-24-14.json',
     'results_base_x86_64_2025-11-23_03-45-51.json',
+    'results_faster_arm64_2025-12-30_19-15-34.json',
     'results_parallel-build_arm64_2025-12-29_12-36-21.json',
     'results_parallel-materialization_arm64_2025-12-30_12-15-00.json',
-    'results_parallel-probe_arm64_2025-12-30_19-15-34.json',
     'results_serial_arm64_2025-12-05_04-24-09.json',
     'results_serial_x86_64_2025-11-30_16-27-40.json'
 ];

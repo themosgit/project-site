@@ -1,5 +1,5 @@
 {
-  "executable": "parallel-probe",
+  "executable": "faster",
   "timestamp": "2025-12-30 19:15:34",
   "architecture": "arm64",
   "iterations_measured": 10,
