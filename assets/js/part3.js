@@ -6,6 +6,7 @@ const BENCHMARK_FILES = [
     'results_faster_arm64_2026-01-03_00-07-13.json',
     'results_faster_arm64_2026-01-06_22-51-20.json',
     'results_faster_arm64_2026-01-06_22-56-11.json',
+    'results_faster_x86_64_2026-01-07_00-24-30.json',
     'results_parallel-build_arm64_2025-12-29_12-36-21.json',
     'results_parallel-build_x86_64_2026-01-06_23-23-37.json',
     'results_parallel-materialization_arm64_2025-12-30_12-15-00.json',
