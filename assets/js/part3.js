@@ -10,7 +10,7 @@ const BENCHMARK_FILES = [
     'results_parallel-materialization_arm64_2025-12-30_12-15-00.json',
     'results_parallel-probe_arm64_2026-01-02_23-55-15.json',
     'results_serial_arm64_2025-12-05_04-24-09.json',
-    'results_serial_x86_64_2025-11-30_16-27-40.json'
+    'results_serial_x86_64_2025-11-30_16-27-40.json',
     'results_parallel-build_x86_64_2026-01-06_23-23-37.json'
 ];
 
