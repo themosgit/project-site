@@ -1,6 +1,5 @@
 const RESULTS_PATH = '../benchmark_results/part3/'; 
 const BENCHMARK_FILES = [
-<<<<<<< Updated upstream
     'results_base_arm64_2025-11-22_23-24-14.json',
     'results_base_x86_64_2025-11-23_03-45-51.json',
     'results_faster_arm64_2025-12-30_19-15-34.json',
@@ -12,9 +11,7 @@ const BENCHMARK_FILES = [
     'results_parallel-probe_arm64_2026-01-02_23-55-15.json',
     'results_serial_arm64_2025-12-05_04-24-09.json',
     'results_serial_x86_64_2025-11-30_16-27-40.json'
-=======
     'results_parallel-build_x86_64_2026-01-06_23-23-37.json'
->>>>>>> Stashed changes
 ];
 
 // Color palettes (replacing D3 color scales)
