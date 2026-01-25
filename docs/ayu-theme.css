@@ -7,205 +7,214 @@
    ============================================================ */
 
 /* ============================================================
+   Font Loading - OpenSans (matching main site)
+   ============================================================ */
+@font-face {
+  font-family: "OpenSans";
+  font-display: swap;
+  src: url("../assets/fonts/OpenSans.woff2") format("woff2");
+}
+
+/* ============================================================
    LIGHT MODE - Ayu Light
    ============================================================ */
 html {
   /* Page base colors */
-  --page-background-color: #fafafa;
-  --page-foreground-color: #5c6166;
-  --page-link-color: #f2ae49;
-  --page-visited-link-color: #e6a243;
-  --page-external-link-color: #fa8d3e;
+  --page-background-color: #f3f4f6;
+  --page-foreground-color: #1f2937;
+  --page-link-color: #3b82f6;
+  --page-visited-link-color: #2563eb;
+  --page-external-link-color: #3b82f6;
 
   /* Index */
-  --index-odd-item-bg-color: #f3f3f3;
-  --index-even-item-bg-color: #fafafa;
-  --index-header-color: #5c6166;
-  --index-separator-color: #d4d4d4;
+  --index-odd-item-bg-color: #ffffff;
+  --index-even-item-bg-color: #f9fafb;
+  --index-header-color: #1f2937;
+  --index-separator-color: #e5e7eb;
 
   /* Header */
-  --header-background-color: #f0f0f0;
-  --header-separator-color: #e1e1e1;
-  --group-header-separator-color: #e8e8e8;
-  --group-header-color: #fa8d3e;
-  --inherit-header-color: #787b80;
+  --header-background-color: #ffffff;
+  --header-separator-color: #e5e7eb;
+  --group-header-separator-color: #e5e7eb;
+  --group-header-color: #3b82f6;
+  --inherit-header-color: #6b7280;
 
-  --footer-foreground-color: #787b80;
+  --footer-foreground-color: #6b7280;
   --footer-logo-width: 75px;
-  --citation-label-color: #fa8d3e;
-  --glow-color: #f2ae49;
+  --citation-label-color: #3b82f6;
+  --glow-color: #3b82f6;
 
-  --title-background-color: #fafafa;
-  --title-separator-color: #e1e1e1;
-  --directory-separator-color: #d4d4d4;
-  --separator-color: #fa8d3e;
+  --title-background-color: #ffffff;
+  --title-separator-color: #e5e7eb;
+  --directory-separator-color: #e5e7eb;
+  --separator-color: #3b82f6;
 
-  --blockquote-background-color: #f5f5f5;
-  --blockquote-border-color: #f2ae49;
+  --blockquote-background-color: #f9fafb;
+  --blockquote-border-color: #3b82f6;
 
-  --scrollbar-thumb-color: #d4d4d4;
-  --scrollbar-background-color: #f0f0f0;
+  --scrollbar-thumb-color: #d1d5db;
+  --scrollbar-background-color: #f3f4f6;
 
-  --icon-background-color: #fa8d3e;
+  --icon-background-color: #3b82f6;
   --icon-foreground-color: #ffffff;
-  --icon-folder-open-fill-color: #f2ae49;
-  --icon-folder-fill-color: #ffcc80;
-  --icon-folder-border-color: #fa8d3e;
-  --icon-doc-fill-color: #e8e8e8;
-  --icon-doc-border-color: #399ee6;
+  --icon-folder-open-fill-color: #3b82f6;
+  --icon-folder-fill-color: #60a5fa;
+  --icon-folder-border-color: #3b82f6;
+  --icon-doc-fill-color: #f3f4f6;
+  --icon-doc-border-color: #3b82f6;
 
   /* Brief member declaration list */
-  --memdecl-background-color: #f5f5f5;
-  --memdecl-separator-color: #e8e8e8;
-  --memdecl-foreground-color: #5c6166;
-  --memdecl-template-color: #a37acc;
-  --memdecl-border-color: #e1e1e1;
+  --memdecl-background-color: #ffffff;
+  --memdecl-separator-color: #e5e7eb;
+  --memdecl-foreground-color: #1f2937;
+  --memdecl-template-color: #a855f7;
+  --memdecl-border-color: #e5e7eb;
 
   /* Detailed member list */
-  --memdef-border-color: #e1e1e1;
-  --memdef-title-background-color: #f0f0f0;
-  --memdef-proto-background-color: #f5f5f5;
-  --memdef-proto-text-color: #5c6166;
-  --memdef-doc-background-color: #fafafa;
-  --memdef-param-name-color: #fa8d3e;
-  --memdef-template-color: #a37acc;
+  --memdef-border-color: #e5e7eb;
+  --memdef-title-background-color: #f9fafb;
+  --memdef-proto-background-color: #ffffff;
+  --memdef-proto-text-color: #1f2937;
+  --memdef-doc-background-color: #ffffff;
+  --memdef-param-name-color: #3b82f6;
+  --memdef-template-color: #a855f7;
 
   /* Tables */
-  --table-cell-border-color: #d4d4d4;
-  --table-header-background-color: #fa8d3e;
+  --table-cell-border-color: #e5e7eb;
+  --table-header-background-color: #3b82f6;
   --table-header-foreground-color: #ffffff;
 
   /* Labels */
-  --label-background-color: #fa8d3e;
-  --label-left-top-border-color: #f2ae49;
-  --label-right-bottom-border-color: #e6a243;
+  --label-background-color: #3b82f6;
+  --label-left-top-border-color: #60a5fa;
+  --label-right-bottom-border-color: #2563eb;
   --label-foreground-color: #ffffff;
 
   /* Navigation bar/tree/menu */
-  --nav-background-color: #f0f0f0;
-  --nav-foreground-color: #5c6166;
-  --nav-border-color: #e1e1e1;
-  --nav-breadcrumb-separator-color: #d4d4d4;
-  --nav-breadcrumb-active-bg: #ffffff;
-  --nav-breadcrumb-color: #fa8d3e;
-  --nav-breadcrumb-border-color: #e1e1e1;
-  --nav-splitbar-bg-color: #e8e8e8;
-  --nav-splitbar-handle-color: #d4d4d4;
+  --nav-background-color: #ffffff;
+  --nav-foreground-color: #1f2937;
+  --nav-border-color: #e5e7eb;
+  --nav-breadcrumb-separator-color: #d1d5db;
+  --nav-breadcrumb-active-bg: #f9fafb;
+  --nav-breadcrumb-color: #3b82f6;
+  --nav-breadcrumb-border-color: #e5e7eb;
+  --nav-splitbar-bg-color: #f3f4f6;
+  --nav-splitbar-handle-color: #d1d5db;
   --nav-font-size-level1: 13px;
   --nav-font-size-level2: 11px;
   --nav-font-size-level3: 10px;
-  --nav-text-normal-color: #5c6166;
-  --nav-text-hover-color: #fa8d3e;
-  --nav-text-active-color: #fa8d3e;
-  --nav-menu-button-color: #5c6166;
+  --nav-text-normal-color: #4b5563;
+  --nav-text-hover-color: #3b82f6;
+  --nav-text-active-color: #3b82f6;
+  --nav-menu-button-color: #4b5563;
   --nav-menu-background-color: #ffffff;
-  --nav-menu-foreground-color: #5c6166;
-  --nav-menu-active-bg: #f0eacd;
-  --nav-menu-active-color: #fa8d3e;
-  --nav-menu-toggle-color: rgba(92, 97, 102, 0.3);
-  --nav-arrow-color: #d4d4d4;
-  --nav-arrow-selected-color: #fa8d3e;
+  --nav-menu-foreground-color: #1f2937;
+  --nav-menu-active-bg: #eff6ff;
+  --nav-menu-active-color: #3b82f6;
+  --nav-menu-toggle-color: rgba(75, 85, 99, 0.3);
+  --nav-arrow-color: #d1d5db;
+  --nav-arrow-selected-color: #3b82f6;
 
   /* Sync icon */
-  --sync-icon-border-color: #e1e1e1;
-  --sync-icon-background-color: #f5f5f5;
-  --sync-icon-selected-background-color: #f0eacd;
-  --sync-icon-color: #d4d4d4;
-  --sync-icon-selected-color: #fa8d3e;
+  --sync-icon-border-color: #e5e7eb;
+  --sync-icon-background-color: #f9fafb;
+  --sync-icon-selected-background-color: #eff6ff;
+  --sync-icon-color: #d1d5db;
+  --sync-icon-selected-color: #3b82f6;
 
   /* Table of contents */
-  --toc-background-color: #f5f5f5;
-  --toc-border-color: #e1e1e1;
-  --toc-header-color: #fa8d3e;
+  --toc-background-color: #ffffff;
+  --toc-border-color: #e5e7eb;
+  --toc-header-color: #3b82f6;
 
   /* Search field */
   --search-background-color: #ffffff;
-  --search-foreground-color: #787b80;
-  --search-active-color: #5c6166;
+  --search-foreground-color: #6b7280;
+  --search-active-color: #1f2937;
   --search-filter-background-color: rgba(255, 255, 255, 0.95);
   --search-filter-backdrop-filter: blur(8px);
-  --search-filter-foreground-color: #5c6166;
-  --search-filter-border-color: #e1e1e1;
+  --search-filter-foreground-color: #1f2937;
+  --search-filter-border-color: #e5e7eb;
   --search-filter-highlight-text-color: #ffffff;
-  --search-filter-highlight-bg-color: #fa8d3e;
-  --search-results-foreground-color: #5c6166;
+  --search-filter-highlight-bg-color: #3b82f6;
+  --search-results-foreground-color: #1f2937;
   --search-results-background-color: rgba(255, 255, 255, 0.95);
   --search-results-backdrop-filter: blur(8px);
-  --search-results-border-color: #e1e1e1;
-  --search-box-border-color: #d4d4d4;
-  --search-close-icon-bg-color: #787b80;
+  --search-results-border-color: #e5e7eb;
+  --search-box-border-color: #d1d5db;
+  --search-close-icon-bg-color: #6b7280;
   --search-close-icon-fg-color: #ffffff;
 
-  /* Code fragments - Ayu Light syntax colors */
-  --code-keyword-color: #fa8d3e;
-  --code-type-keyword-color: #399ee6;
-  --code-flow-keyword-color: #fa8d3e;
-  --code-comment-color: #787b80;
-  --code-preprocessor-color: #a37acc;
-  --code-string-literal-color: #86b300;
-  --code-char-literal-color: #4cbf99;
-  --code-xml-cdata-color: #5c6166;
-  --code-vhdl-digit-color: #a37acc;
-  --code-vhdl-char-color: #5c6166;
-  --code-vhdl-keyword-color: #fa8d3e;
-  --code-vhdl-logic-color: #e65050;
-  --code-link-color: #399ee6;
-  --code-external-link-color: #55b4d4;
-  --fragment-foreground-color: #5c6166;
-  --fragment-background-color: #f8f8f8;
-  --fragment-border-color: #e1e1e1;
-  --fragment-lineno-border-color: #e1e1e1;
-  --fragment-lineno-background-color: #f0f0f0;
-  --fragment-lineno-foreground-color: #787b80;
-  --fragment-lineno-link-fg-color: #787b80;
-  --fragment-lineno-link-bg-color: #e8e8e8;
-  --fragment-lineno-link-hover-fg-color: #fa8d3e;
-  --fragment-lineno-link-hover-bg-color: #f0eacd;
-  --fragment-copy-ok-color: #86b300;
+  /* Code fragments - Matching site color scheme */
+  --code-keyword-color: #3b82f6;
+  --code-type-keyword-color: #3b82f6;
+  --code-flow-keyword-color: #a855f7;
+  --code-comment-color: #6b7280;
+  --code-preprocessor-color: #a855f7;
+  --code-string-literal-color: #059669;
+  --code-char-literal-color: #059669;
+  --code-xml-cdata-color: #1f2937;
+  --code-vhdl-digit-color: #a855f7;
+  --code-vhdl-char-color: #1f2937;
+  --code-vhdl-keyword-color: #3b82f6;
+  --code-vhdl-logic-color: #dc2626;
+  --code-link-color: #3b82f6;
+  --code-external-link-color: #2563eb;
+  --fragment-foreground-color: #1f2937;
+  --fragment-background-color: #ffffff;
+  --fragment-border-color: #e5e7eb;
+  --fragment-lineno-border-color: #e5e7eb;
+  --fragment-lineno-background-color: #f9fafb;
+  --fragment-lineno-foreground-color: #6b7280;
+  --fragment-lineno-link-fg-color: #6b7280;
+  --fragment-lineno-link-bg-color: #f3f4f6;
+  --fragment-lineno-link-hover-fg-color: #3b82f6;
+  --fragment-lineno-link-hover-bg-color: #eff6ff;
+  --fragment-copy-ok-color: #059669;
   --fragment-highlight-filter: -3;
-  --tooltip-foreground-color: #5c6166;
+  --tooltip-foreground-color: #1f2937;
   --tooltip-background-color: rgba(255, 255, 255, 0.95);
   --tooltip-arrow-background-color: #ffffff;
-  --tooltip-border-color: #e1e1e1;
+  --tooltip-border-color: #e5e7eb;
   --tooltip-backdrop-filter: blur(8px);
-  --tooltip-doc-color: #787b80;
-  --tooltip-declaration-color: #86b300;
-  --tooltip-link-color: #399ee6;
+  --tooltip-doc-color: #6b7280;
+  --tooltip-declaration-color: #059669;
+  --tooltip-link-color: #3b82f6;
   --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --fold-line-color: #d4d4d4;
+  --fold-line-color: #d1d5db;
 
-  /* Font family - Modern system fonts */
-  --font-family-normal: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Font family - OpenSans (matching main site) */
+  --font-family-normal: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-family-monospace: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
-  --font-family-nav: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-title: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-toc: 'Inter', system-ui, sans-serif;
-  --font-family-search: 'Inter', system-ui, sans-serif;
+  --font-family-nav: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family-title: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-toc: 'OpenSans', system-ui, sans-serif;
+  --font-family-search: 'OpenSans', system-ui, sans-serif;
   --font-family-icon: system-ui, sans-serif;
-  --font-family-tooltip: 'Inter', system-ui, sans-serif;
+  --font-family-tooltip: 'OpenSans', system-ui, sans-serif;
 
-  /* Special sections - Ayu-styled */
-  --warning-color-bg: #fff0f0;
-  --warning-color-hl: #e65050;
-  --warning-color-text: #b83030;
-  --note-color-bg: #fff8e6;
-  --note-color-hl: #f2ae49;
-  --note-color-text: #8a6d2b;
-  --todo-color-bg: #e6f4ff;
-  --todo-color-hl: #399ee6;
-  --todo-color-text: #2a6a9e;
-  --test-color-bg: #f0e6ff;
-  --test-color-hl: #a37acc;
-  --test-color-text: #6b4d99;
-  --deprecated-color-bg: #f5f5f5;
-  --deprecated-color-hl: #787b80;
-  --deprecated-color-text: #5c6166;
-  --bug-color-bg: #ffe6e6;
-  --bug-color-hl: #e65050;
-  --bug-color-text: #a03030;
-  --invariant-color-bg: #e6fff0;
-  --invariant-color-hl: #4cbf99;
-  --invariant-color-text: #2a7a5a;
+  /* Special sections - Matching site color scheme */
+  --warning-color-bg: #fef2f2;
+  --warning-color-hl: #dc2626;
+  --warning-color-text: #991b1b;
+  --note-color-bg: #eff6ff;
+  --note-color-hl: #3b82f6;
+  --note-color-text: #1e40af;
+  --todo-color-bg: #eff6ff;
+  --todo-color-hl: #3b82f6;
+  --todo-color-text: #1e40af;
+  --test-color-bg: #faf5ff;
+  --test-color-hl: #a855f7;
+  --test-color-text: #6b21a8;
+  --deprecated-color-bg: #f9fafb;
+  --deprecated-color-hl: #6b7280;
+  --deprecated-color-text: #4b5563;
+  --bug-color-bg: #fef2f2;
+  --bug-color-hl: #dc2626;
+  --bug-color-text: #991b1b;
+  --invariant-color-bg: #f0fdf4;
+  --invariant-color-hl: #059669;
+  --invariant-color-text: #065f46;
 }
 
 /* ============================================================
@@ -289,7 +298,7 @@ html.dark-mode {
   --nav-border-color: #1c2433;
   --nav-breadcrumb-separator-color: #1c2433;
   --nav-breadcrumb-active-bg: #131721;
-  --nav-breadcrumb-color: #e6b450;
+  --nav-breadcrumb-color: #60a5fa;
   --nav-breadcrumb-border-color: #232d3f;
   --nav-splitbar-bg-color: #1c2433;
   --nav-splitbar-handle-color: #273747;
@@ -297,16 +306,16 @@ html.dark-mode {
   --nav-font-size-level2: 11px;
   --nav-font-size-level3: 10px;
   --nav-text-normal-color: #8a9199;
-  --nav-text-hover-color: #e6b450;
-  --nav-text-active-color: #e6b450;
+  --nav-text-hover-color: #60a5fa;
+  --nav-text-active-color: #60a5fa;
   --nav-menu-button-color: #bfbdb6;
   --nav-menu-background-color: #0b0e14;
   --nav-menu-foreground-color: #bfbdb6;
-  --nav-menu-active-bg: #273747;
-  --nav-menu-active-color: #e6b450;
+  --nav-menu-active-bg: #1e3a5f;
+  --nav-menu-active-color: #60a5fa;
   --nav-menu-toggle-color: rgba(191, 189, 182, 0.2);
   --nav-arrow-color: #273747;
-  --nav-arrow-selected-color: #e6b450;
+  --nav-arrow-selected-color: #60a5fa;
 
   /* Sync icon */
   --sync-icon-border-color: #1c2433;
@@ -376,15 +385,15 @@ html.dark-mode {
   --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   --fold-line-color: #273747;
 
-  /* Font family - Same as light mode */
-  --font-family-normal: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Font family - OpenSans (matching main site) */
+  --font-family-normal: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-family-monospace: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
-  --font-family-nav: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-title: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-toc: 'Inter', system-ui, sans-serif;
-  --font-family-search: 'Inter', system-ui, sans-serif;
+  --font-family-nav: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family-title: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-toc: 'OpenSans', system-ui, sans-serif;
+  --font-family-search: 'OpenSans', system-ui, sans-serif;
   --font-family-icon: system-ui, sans-serif;
-  --font-family-tooltip: 'Inter', system-ui, sans-serif;
+  --font-family-tooltip: 'OpenSans', system-ui, sans-serif;
 
   /* Special sections - Ayu Dark styled */
   --warning-color-bg: #2a1515;
@@ -415,8 +424,7 @@ html.dark-mode {
    Additional styling for a more modern look
    ============================================================ */
 
-/* Import Inter font from Google Fonts (optional - falls back to system fonts) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* OpenSans font is loaded via @font-face above, matching the main site */
 
 /* Smooth transitions for theme switching */
 html {
@@ -425,6 +433,7 @@ html {
 
 /* Better text rendering */
 body {
+  font-family: 'OpenSans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -735,6 +744,34 @@ blockquote {
 
 .navpath li {
   padding: 0.25rem 0;
+}
+
+/* -------------------- Back to Site Link -------------------- */
+
+.back-to-site-link {
+  font-size: 14px !important;
+  color: var(--page-link-color, #3b82f6) !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  display: inline-block !important;
+  margin-top: 8px !important;
+}
+
+.back-to-site-link:hover {
+  background-color: var(--nav-menu-active-bg, #eff6ff) !important;
+  text-decoration: none !important;
+  color: var(--page-link-color, #3b82f6) !important;
+}
+
+html.dark-mode .back-to-site-link {
+  color: var(--page-link-color, #60a5fa) !important;
+}
+
+html.dark-mode .back-to-site-link:hover {
+  background-color: var(--nav-menu-active-bg, #1e3a5f) !important;
 }
 
 /* -------------------- Footer -------------------- */

@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <a href="${pagesPath}part1.html" class="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium block transition-colors">Part 1</a>
         <a href="${pagesPath}part2.html" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium block transition-colors">Part 2</a>
         <a href="${pagesPath}part3.html" class="text-gray-500 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium block transition-colors">Part 3</a>
+        <a href="${rootPath}docs/index.html" class="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium block transition-colors">Docs</a>
     `;
 
     const headerHtml = `
