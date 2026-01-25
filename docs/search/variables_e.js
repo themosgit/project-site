@@ -1,0 +1,13 @@
+var searchData=
+[
+  ['pa_0',['pa',['../structDSU.html#a4cd2764a20c88beccc18553ffd96d602',1,'DSU']]],
+  ['page_5fidx_5fval_1',['page_idx_val',['../structContest_1_1io_1_1ColumnarReader_1_1Cursor.html#aaf507b19dfbcdee1504bcd139d8ffd1e',1,'Contest::io::ColumnarReader::Cursor::page_idx_val'],['../structContest_1_1ColumnarReader_1_1Cursor.html#aaf507b19dfbcdee1504bcd139d8ffd1e',1,'Contest::ColumnarReader::Cursor::page_idx_val'],['../structContest_1_1join_1_1ColumnarReader_1_1Cursor.html#aaf507b19dfbcdee1504bcd139d8ffd1e',1,'Contest::join::ColumnarReader::Cursor::page_idx_val'],['../structContest_1_1materialize_1_1ColumnarReader_1_1Cursor.html#aaf507b19dfbcdee1504bcd139d8ffd1e',1,'Contest::materialize::ColumnarReader::Cursor::page_idx_val']]],
+  ['page_5fprefix_5fsums_2',['page_prefix_sums',['../structContest_1_1io_1_1PageIndex.html#a2e1e40810ed28bd1c145b2b46c6214b0',1,'Contest::io::PageIndex::page_prefix_sums'],['../structContest_1_1PageIndex.html#a2e1e40810ed28bd1c145b2b46c6214b0',1,'Contest::PageIndex::page_prefix_sums']]],
+  ['page_5fsize_3',['PAGE_SIZE',['../plan_8h.html#af60e67b7145f8e316bfefd914d7c4e7b',1,'plan.h']]],
+  ['pages_4',['pages',['../structmema_1_1column__t.html#a471e986c67f366dac9a81689d8cbe31d',1,'mema::column_t::pages'],['../structColumn.html#ac33d3e84f04389904c2d4f38fe4f5ad6',1,'Column::pages']]],
+  ['pages_5fptr_5',['pages_ptr',['../structContest_1_1io_1_1PageIndex.html#a8152cf67cb5cdbe6a3ba8b6a47d57e8f',1,'Contest::io::PageIndex::pages_ptr'],['../structContest_1_1PageIndex.html#a8152cf67cb5cdbe6a3ba8b6a47d57e8f',1,'Contest::PageIndex::pages_ptr']]],
+  ['pending_5fbits_6',['pending_bits',['../structContest_1_1materialize_1_1BitmapAccumulator.html#af9d3eb45f37ee2692d22bd92c047c386',1,'Contest::materialize::BitmapAccumulator']]],
+  ['prefix_5fsum_5fptr_7',['prefix_sum_ptr',['../structContest_1_1io_1_1ColumnarReader_1_1Cursor.html#a361a5c3ec309b74b291e059743de4333',1,'Contest::io::ColumnarReader::Cursor::prefix_sum_ptr'],['../structContest_1_1ColumnarReader_1_1Cursor.html#a361a5c3ec309b74b291e059743de4333',1,'Contest::ColumnarReader::Cursor::prefix_sum_ptr'],['../structContest_1_1join_1_1ColumnarReader_1_1Cursor.html#a361a5c3ec309b74b291e059743de4333',1,'Contest::join::ColumnarReader::Cursor::prefix_sum_ptr'],['../structContest_1_1materialize_1_1ColumnarReader_1_1Cursor.html#a361a5c3ec309b74b291e059743de4333',1,'Contest::materialize::ColumnarReader::Cursor::prefix_sum_ptr']]],
+  ['prepared_8',['prepared',['../structContest_1_1join_1_1JoinSetup.html#a73faac738475a0024d524d75b19e5d7a',1,'Contest::join::JoinSetup']]],
+  ['probe_5fattr_9',['probe_attr',['../structContest_1_1join_1_1BuildProbeConfig.html#a4269832f0cc28a772a1c3eaff34dd61a',1,'Contest::join::BuildProbeConfig']]]
+];

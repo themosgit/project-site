@@ -1,0 +1,27 @@
+var namespaceContest_1_1materialize =
+[
+    [ "SourceInfo", "structContest_1_1materialize_1_1SourceInfo.html", "structContest_1_1materialize_1_1SourceInfo" ],
+    [ "BitmapAccumulator", "structContest_1_1materialize_1_1BitmapAccumulator.html", "structContest_1_1materialize_1_1BitmapAccumulator" ],
+    [ "Int32PageBuilder", "structContest_1_1materialize_1_1Int32PageBuilder.html", "structContest_1_1materialize_1_1Int32PageBuilder" ],
+    [ "VarcharPageBuilder", "structContest_1_1materialize_1_1VarcharPageBuilder.html", "structContest_1_1materialize_1_1VarcharPageBuilder" ],
+    [ "ColumnarReader", "classContest_1_1materialize_1_1ColumnarReader.html", "classContest_1_1materialize_1_1ColumnarReader" ],
+    [ "JoinInput", "structContest_1_1materialize_1_1JoinInput.html", "structContest_1_1materialize_1_1JoinInput" ],
+    [ "ThreadLocalMatchBuffer", "classContest_1_1materialize_1_1ThreadLocalMatchBuffer.html", "classContest_1_1materialize_1_1ThreadLocalMatchBuffer" ],
+    [ "ExecuteResult", "namespaceContest_1_1materialize.html#abde7e676e3bfbc2b4e0adc415adf24c1", null ],
+    [ "ExecuteResult", "namespaceContest_1_1materialize.html#abde7e676e3bfbc2b4e0adc415adf24c1", null ],
+    [ "MatchCollectionMode", "namespaceContest_1_1materialize.html#a8fdd5c57a4a9d708ef7d51a1bca75198", null ],
+    [ "MatchCollectionMode", "namespaceContest_1_1materialize.html#a8fdd5c57a4a9d708ef7d51a1bca75198", null ],
+    [ "construct_intermediate_from_buffers", "namespaceContest_1_1materialize.html#a34c0900156b79e954dde213f4501e12d", null ],
+    [ "create_empty_result", "namespaceContest_1_1materialize.html#a11ad12d59da8e94e77c93bfb1c49bca2", null ],
+    [ "get_arena_mapped_memory", "namespaceContest_1_1materialize.html#a7dfa257438ac3fa95b82753a73acf96b", null ],
+    [ "get_string_view", "namespaceContest_1_1materialize.html#a6aea1edf521a5e397af8112c34fa3c38", null ],
+    [ "materialize_column_from_buffers", "namespaceContest_1_1materialize.html#aba982c3b30202665679351b6484370b1", null ],
+    [ "materialize_from_buffers", "namespaceContest_1_1materialize.html#ad9b8401a3498ccb2c28ff1111c5934b4", null ],
+    [ "materialize_single_column_from_buffers", "namespaceContest_1_1materialize.html#aab9e6707e5a0e4a2a59c594a360a9e5d", null ],
+    [ "prepare_sources", "namespaceContest_1_1materialize.html#adbc16a3666cfcc018ead9dbe578595b7", null ],
+    [ "resolve_input_source", "namespaceContest_1_1materialize.html#a4b877aeae8263022cf3a9642a572d96c", null ],
+    [ "worker_pool", "namespaceContest_1_1materialize.html#a38a9e2ed45c6257fdc31185508865286", null ],
+    [ "worker_pool", "namespaceContest_1_1materialize.html#a38a9e2ed45c6257fdc31185508865286", null ],
+    [ "THREAD_COUNT", "namespaceContest_1_1materialize.html#ad3ede4878e4ef27091784099011ef085", null ],
+    [ "THREAD_COUNT", "namespaceContest_1_1materialize.html#ad3ede4878e4ef27091784099011ef085", null ]
+];

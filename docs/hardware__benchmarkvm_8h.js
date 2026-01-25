@@ -1,0 +1,26 @@
+var hardware__benchmarkvm_8h =
+[
+    [ "SPC__CORE_COUNT", "hardware__benchmarkvm_8h.html#ab3fd0dbc237b866def25435cb05b6a42", null ],
+    [ "SPC__CPU_NAME", "hardware__benchmarkvm_8h.html#a8fa9b39c73150a56ddeb86908b20fb09", null ],
+    [ "SPC__KERNEL", "hardware__benchmarkvm_8h.html#af4c29f123e1a69ca4696f4d7eafa5b48", null ],
+    [ "SPC__LEVEL1_DCACHE_ASSOC", "hardware__benchmarkvm_8h.html#a9b7da945e146bba6fbded6d17ca6bd30", null ],
+    [ "SPC__LEVEL1_DCACHE_LINESIZE", "hardware__benchmarkvm_8h.html#a6d6834a9ff54ed6b1fb96ebbd2e274cd", null ],
+    [ "SPC__LEVEL1_DCACHE_SIZE", "hardware__benchmarkvm_8h.html#a5dbd1e1a543b59b4f5c4c0a41edd7d20", null ],
+    [ "SPC__LEVEL1_ICACHE_ASSOC", "hardware__benchmarkvm_8h.html#a3b6170738cd61e89f0940cea7b0d67a0", null ],
+    [ "SPC__LEVEL1_ICACHE_LINESIZE", "hardware__benchmarkvm_8h.html#ae8cef57736532f437c86030ca99aa3a4", null ],
+    [ "SPC__LEVEL1_ICACHE_SIZE", "hardware__benchmarkvm_8h.html#abb318b3d802be46860553fafafa02ce5", null ],
+    [ "SPC__LEVEL2_CACHE_ASSOC", "hardware__benchmarkvm_8h.html#a9957e859deaea17a2d38ac0148d2b2a8", null ],
+    [ "SPC__LEVEL2_CACHE_LINESIZE", "hardware__benchmarkvm_8h.html#a9bca6cffafcfa63c81eb797b4b7108fb", null ],
+    [ "SPC__LEVEL2_CACHE_SIZE", "hardware__benchmarkvm_8h.html#a5bc3c82e61b3b43ffda1a56ea1bb28bf", null ],
+    [ "SPC__LEVEL3_CACHE_ASSOC", "hardware__benchmarkvm_8h.html#acc143826348f70874a98a8b48d38fa7c", null ],
+    [ "SPC__LEVEL3_CACHE_LINESIZE", "hardware__benchmarkvm_8h.html#aae0e301c77b776f698d5d820963aabe7", null ],
+    [ "SPC__LEVEL3_CACHE_SIZE", "hardware__benchmarkvm_8h.html#a52f112e185e66e96cc5d8802466682cf", null ],
+    [ "SPC__LEVEL4_CACHE_ASSOC", "hardware__benchmarkvm_8h.html#acd9b318b21e742dcf150fb45a72aa7a4", null ],
+    [ "SPC__LEVEL4_CACHE_LINESIZE", "hardware__benchmarkvm_8h.html#a1e594d776cc87679995b0887bc17b5fd", null ],
+    [ "SPC__LEVEL4_CACHE_SIZE", "hardware__benchmarkvm_8h.html#a0c50b14bd423d0a1bb9256e82d3dcc53", null ],
+    [ "SPC__NUMA_NODE_DRAM_MB", "hardware__benchmarkvm_8h.html#ad30e4b50ce8718f57ae901ffd372e68e", null ],
+    [ "SPC__OS", "hardware__benchmarkvm_8h.html#a09cf253bbe9e71ba9f2757681a265aef", null ],
+    [ "SPC__SUPPORTS_AVX2", "hardware__benchmarkvm_8h.html#a54cf9a7f73dce89790a68e04a5ded0f0", null ],
+    [ "SPC__THREAD_COUNT", "hardware__benchmarkvm_8h.html#ac79802f68efd43e3c278357e5e89bc48", null ],
+    [ "SPC__X86_64", "hardware__benchmarkvm_8h.html#ab2386f108d6b2e9f99f10103b5085a6f", null ]
+];

@@ -1,0 +1,23 @@
+var searchData=
+[
+  ['data_0',['Data',['../statement_8h.html#afb5d0c91678df60ad6b0a1e1ed372f24',1,'statement.h']]],
+  ['data_1',['data',['../structInnerColumn.html#af415459b68c00b4663500600c809f2d1',1,'InnerColumn::data'],['../structInnerColumn_3_01std_1_1string_01_4.html#abd3f39d48d17eb2b483942cc957b8370',1,'InnerColumn&lt; std::string &gt;::data'],['../structmema_1_1column__t_1_1Page.html#a73702541ce745fbe298a7b9dca965db9',1,'mema::column_t::Page::data'],['../structPlanNode.html#a42c859497fbe0721882e59b4394cff36',1,'PlanNode::data'],['../structPage.html#a533ebdcbf6327e223129c01f70d113e0',1,'Page::data'],['../structColumnInserter_3_01std_1_1string_01_4.html#af46e8876cf9207fedf5c3a23ce01a8c4',1,'ColumnInserter&lt; std::string &gt;::data'],['../structUnchainedHashtable_1_1Chunk.html#a0f943ac9ba99a7dae1c795e4df510ed1',1,'UnchainedHashtable::Chunk::data'],['../structContest_1_1join_1_1JoinInput.html#a1a1d96fcd6eca2b40b4480ee83e85a6f',1,'Contest::join::JoinInput::data'],['../classContest_1_1platform_1_1ArenaVector.html#a025c174aba930f48cc1d110d7f0d0014',1,'Contest::platform::ArenaVector::data()'],['../classContest_1_1platform_1_1ArenaVector.html#a5e544a8081380774db4726a17edab2f8',1,'Contest::platform::ArenaVector::data() const'],['../structContest_1_1materialize_1_1JoinInput.html#a1a1d96fcd6eca2b40b4480ee83e85a6f',1,'Contest::materialize::JoinInput::data']]],
+  ['data_20access_2',['Data Access',['../index.html#autotoc_md8',1,'']]],
+  ['data_20representations_3',['Data Representations',['../index.html#autotoc_md12',1,'']]],
+  ['data_5fbegin_4',['data_begin',['../structColumnInserter.html#a6eeba795802593f2ba947239df751126',1,'ColumnInserter::data_begin()'],['../structColumnInserter.html#a6eeba795802593f2ba947239df751126',1,'ColumnInserter&lt; std::string &gt;::data_begin()']]],
+  ['data_5fend_5',['data_end',['../structColumnInserter.html#ac46e4f81a01607a92061912170fbaab1',1,'ColumnInserter::data_end'],['../structColumnInserter.html#ac46e4f81a01607a92061912170fbaab1',1,'ColumnInserter&lt; std::string &gt;::data_end']]],
+  ['data_5fptr_6',['data_ptr',['../structContest_1_1io_1_1ColumnarReader_1_1Cursor.html#a08d42a704419b5ed8daccc73356464d6',1,'Contest::io::ColumnarReader::Cursor::data_ptr'],['../structContest_1_1materialize_1_1Int32PageBuilder.html#a4cefe8a3fda71242177060d1763fafa2',1,'Contest::materialize::Int32PageBuilder::data_ptr'],['../structContest_1_1ColumnarReader_1_1Cursor.html#a08d42a704419b5ed8daccc73356464d6',1,'Contest::ColumnarReader::Cursor::data_ptr'],['../structContest_1_1join_1_1ColumnarReader_1_1Cursor.html#a08d42a704419b5ed8daccc73356464d6',1,'Contest::join::ColumnarReader::Cursor::data_ptr'],['../structContest_1_1materialize_1_1ColumnarReader_1_1Cursor.html#a08d42a704419b5ed8daccc73356464d6',1,'Contest::materialize::ColumnarReader::Cursor::data_ptr']]],
+  ['data_5fsize_7',['data_size',['../structColumnInserter_3_01std_1_1string_01_4.html#abf0d1a617a7baef643868f034090c95f',1,'ColumnInserter&lt; std::string &gt;']]],
+  ['data_5ftype_8',['data_type',['../structInnerColumn.html#ab2c8871aa408d4db5c3f15d53438dee7',1,'InnerColumn::data_type()'],['../structInnerColumn_3_01std_1_1string_01_4.html#a24c0e136bec34eeb7ed9ff8d18c544cf',1,'InnerColumn&lt; std::string &gt;::data_type()']]],
+  ['datatype_9',['DataType',['../attribute_8h.html#ad8ed01ff3ff33333d8e19db4d2818bb6',1,'attribute.h']]],
+  ['decode_5fstring_10',['decode_string',['../structmema_1_1value__t.html#a7d7cd0488f45dc7aa61508e054c2a84e',1,'mema::value_t']]],
+  ['default_5fconfig_11',['DEFAULT_CONFIG',['../namespaceContest_1_1platform.html#a6cbbd571e9921c55e8d8cc4fd8cc05d6',1,'Contest::platform']]],
+  ['destroy_5fcontext_12',['destroy_context',['../namespaceContest.html#a704a01889778760fd3c6509fd75f2e38',1,'Contest']]],
+  ['destructed_13',['destructed',['../structFilterThreadPool.html#a3734882a4986b266806200f06a591905',1,'FilterThreadPool']]],
+  ['detail_14',['detail',['../namespacedetail.html',1,'']]],
+  ['determine_5fcollection_5fmode_15',['determine_collection_mode',['../namespaceContest_1_1join.html#ae8b8217a13173b2f3dea5e217a787ea3',1,'Contest::join']]],
+  ['dispatch_5fdata_5ftype_16',['DISPATCH_DATA_TYPE',['../attribute_8h.html#aedab8853552eca281e1eba372bb7a53f',1,'attribute.h']]],
+  ['dsu_17',['DSU',['../structDSU.html',1,'DSU'],['../structDSU.html#a903200e857448a6a38117f727332cd13',1,'DSU::DSU()']]],
+  ['dump_18',['dump',['../classDumpTable.html#a414915a9383740b1d0d049fd141c4164',1,'DumpTable']]],
+  ['dumptable_19',['DumpTable',['../classDumpTable.html',1,'DumpTable'],['../classDumpTable.html#af4d233692cc37b8a5e9c8158a44abfb8',1,'DumpTable::DumpTable()']]]
+];
